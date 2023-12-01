@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" type="text/css" href="../app/css/popup.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins&display=swap"
+      rel="stylesheet"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Heist Supervisor</title>
+    <script type="module" src="../dist/bundlePopup.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div id="notificationContainer">
+          <div id="notifContent"></div>
+        </div>
+        <div id="headerElem" class="headerElem">
+          <img src="../app/assets/logo_128.png" draggable="false" />
+          <div style="display: table-column">
+            <h1 style="margin-bottom: 5px;">Heist Supervisor</h1>
+            <h2 style="font-size: medium; margin: 0px; text-align: right;" id="version"></h2>
+        </div>
+      </header>
+      <div id="home">
+        <div id="buttonList" class="buttonList" style="display: none">
+          <button id="button1" class="button" style="cursor: pointer">
+            Actual COCO/NANA Prices
+          </button>
+          <button id="button2" class="button" style="cursor: pointer">
+            private messaging
+          </button>
+          <button id="button3" class="button" style="cursor: pointer">
+            sign out
+          </button>
+
+          <button id="signButton" class="button" style="cursor: pointer">
+            Login section
+          </button>
+        </div>
+      </div>
+      <div id="loadingOverlay" class="loading-overlay">
+        <div id="notificationContainer">
+          <div id="notifContent"></div>
+        </div>
+        <div id="headerElem" class="headerElem">
+          <img
+            src="../app/assets/logo_128.png"
+            draggable="false"
+            style="border-radius: 10px; margin-right: 10px"
+          />
+          <h1>Heist Supervisor</h1>
+        </div>
+        <div class="loader">
+          <svg class="circular" viewBox="25 25 50 50">
+            <circle
+              class="path"
+              cx="50"
+              cy="50"
+              r="20"
+              fill="none"
+              stroke-width="4"
+              stroke-miterlimit="10"
+            />
+          </svg>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

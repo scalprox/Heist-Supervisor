@@ -1,0 +1,33 @@
+<div class="priceTable">
+  <form id="logForm">
+    <h2>Email :</h2>
+    <label for="email"></label>
+    <input
+      type="text"
+      id="email"
+      name="email"
+      maxlength="64"
+      required
+      autocomplete="username"
+    />
+
+    <h2>Password :</h2>
+    <label for="password"></label>
+    <input
+      type="password"
+      id="password"
+      name="password"
+      maxlength="32"
+      required
+      autocomplete="current-password"
+    />
+  </form>
+  <div id="errorContainer">
+    <p id="errorMessage" class="errorMessage"></p>
+  </div>
+  <div style="margin-top: 10 px">
+    <button id="loginButton" class="button" style="margin: 10px">Login</button>
+    <button id="signinButton" class="button">Signin</button>
+  </div>
+</div>
+<button id="button0" class="buttonBack" style="cursor: pointer">home</button>

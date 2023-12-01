@@ -1,0 +1,159 @@
+@font-face {
+    font-family: "Bangers";
+    src: url("../assets/Bangers-Regular.ttf") format("truetype");
+  }
+  /* Pour le conteneur en défilement */
+  ::-webkit-scrollbar {
+    width: 3px; /* Largeur de la scrollbar verticale */
+    height: 100%; /* Hauteur de la scrollbar horizontale */
+  }
+  
+  /* Handle (la partie que vous faites glisser) */
+  ::-webkit-scrollbar-thumb {
+    background: #999999; /* Couleur de fond du handle */
+    border-radius: 4px; /* Arrondi des bords du handle */
+  }
+  
+  /* Handle lors du survol */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #f1f1f1; /* Couleur de fond du handle lors du survol */
+  }
+  
+  /* Track (la partie où le handle se déplace) */
+  ::-webkit-scrollbar-track {
+    background: #555; /* Couleur de fond du track */
+    border-radius: 4px; /* Arrondi des bords du track */
+  }
+  
+  /* Boutons haut et bas (si présents) */
+  ::-webkit-scrollbar-button {
+    display: none; /* Cache les boutons haut/bas */
+  }
+  html.is-changing .transition-fade {
+    transition: opacity 0.25s;
+    opacity: 1;
+  }
+  html.is-animating .transition-fade {
+    opacity: 0;
+  }
+  body {
+    background-color: #313131;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    width: 340px;
+    overflow-y: auto;
+    height: 520px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  .headerElem {
+    display: flex;
+    align-items: center;
+  }
+  p {
+    color: whitesmoke;
+    font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
+      "Lucida Sans", Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 20px;
+  }
+  header img {
+    width: 128px;
+    height: 128px;
+    margin-right: 10px;
+    border-radius: 10%;
+  }
+  h1 {
+    color: #e2e8c0;
+    font-family: "Bangers", sans-serif;
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 34px;
+  }
+  h2 {
+    color: #e2e8c0;
+    font-family: "Bangers", sans-serif;
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 34px;
+    margin: 10px;
+  }
+  
+  input {
+    outline: none;
+    width: 250px;
+    height: 35px;
+    border-radius: 20px;
+    border-width: 0px;
+    margin: 10px;
+    text-align: center;
+    border-color: #282828;
+  }
+  .notification {
+    color: #e2e8c0;
+    position: fixed;
+    top: 28px;
+    right: -300px;
+    padding: 10px;
+    border: 1px solid #000;
+    border-radius: 5px;
+    background-color: #282828;
+    transition: right 0.5s;
+    z-index: 1000;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    font-size: 16px;
+    width: 80%;
+    height: 80px;
+  }
+  .notification.slideIn {
+    right: 28px;
+  }
+  .notification.slideOut {
+    right: -300px;
+  }
+  .button {
+    background-color: #e2e8c0;
+    color: #313131;
+    font-family: "Bangers", sans-serif;
+    font-size: 22px;
+    padding: 4px 12px;
+    border: none;
+    text-align: center;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    transition:
+      background-color 0.3s,
+      transform 0.2s,
+      box-shadow 0.3s;
+  }
+  
+  .button:hover {
+    background-color: #f8ffd4;
+    transform: translateY(2px);
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    cursor: pointer;
+  }
+  .stateLogo {
+    width: 40px;
+    height: 40px;
+    padding: 10px;
+  }
+  .button99 {
+    background-color: #e2e8c0;
+    color: #313131;
+    font-family: "Bangers", sans-serif;
+    font-size: 22px;
+    padding: 4px 12px;
+    border: none;
+    text-align: center;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    cursor: default;
+  }

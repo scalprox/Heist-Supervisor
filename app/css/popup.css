@@ -1,0 +1,405 @@
+@font-face {
+  font-family: "Bangers";
+  src: url("../assets/Bangers-Regular.ttf") format("truetype");
+}
+/* Pour le conteneur en défilement */
+::-webkit-scrollbar {
+  width: 3px; /* Largeur de la scrollbar verticale */
+  height: 100%; /* Hauteur de la scrollbar horizontale */
+}
+
+/* Handle (la partie que vous faites glisser) */
+::-webkit-scrollbar-thumb {
+  background: #999999; /* Couleur de fond du handle */
+  border-radius: 4px; /* Arrondi des bords du handle */
+}
+
+/* Handle lors du survol */
+::-webkit-scrollbar-thumb:hover {
+  background: #f1f1f1; /* Couleur de fond du handle lors du survol */
+}
+
+/* Track (la partie où le handle se déplace) */
+::-webkit-scrollbar-track {
+  background: #555; /* Couleur de fond du track */
+  border-radius: 4px; /* Arrondi des bords du track */
+}
+
+/* Boutons haut et bas (si présents) */
+::-webkit-scrollbar-button {
+  display: none; /* Cache les boutons haut/bas */
+}
+
+html.is-changing .transition-fade {
+  transition: opacity 0.25s;
+  opacity: 1;
+}
+html.is-animating .transition-fade {
+  opacity: 0;
+}
+body {
+  background-color: #313131;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  width: 340px;
+  overflow-y: auto;
+  height: 520px;
+}
+header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.headerElem {
+  display: flex;
+  align-items: center;
+}
+p {
+  color: whitesmoke;
+  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
+    "Lucida Sans", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+}
+header img {
+  width: 128px;
+  height: 128px;
+  margin-right: 10px;
+  border-radius: 10%;
+}
+h1 {
+  color: #e2e8c0;
+  font-family: "Bangers", sans-serif;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 34px;
+}
+h2 {
+  color: #e2e8c0;
+  font-family: "Bangers", sans-serif;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 34px;
+  margin: 10px;
+}
+
+input {
+  outline: none;
+  width: 250px;
+  height: 35px;
+  border-radius: 20px;
+  border-width: 0px;
+  margin: 10px;
+  text-align: center;
+  border-color: #282828;
+}
+.buttonList {
+  height: 90%;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  padding: 5px;
+  transition: opacity 0.2s ease;
+}
+.offButton {
+  height: 40px;
+  width: 40px;
+  cursor: pointer;
+  filter: grayscale(100%);
+}
+.buttonSend {
+  transition:
+    box-shadow 0.3s,
+    transform 0.2s;
+  height: 40px;
+  width: 40px;
+  cursor: pointer;
+  filter: grayscale(0%);
+}
+.buttonSend:hover {
+  transform: translateY(2px);
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+.button {
+  background-color: #e2e8c0;
+  color: #313131;
+  font-family: "Bangers", sans-serif;
+  font-size: 22px;
+  padding: 4px 12px;
+  border: none;
+  text-align: center;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  transition:
+    background-color 0.3s,
+    transform 0.2s,
+    box-shadow 0.3s;
+}
+
+.button:hover {
+  background-color: #f8ffd4;
+  transform: translateY(2px);
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  cursor: pointer;
+}
+#nanaPrice,
+#cocoPrice {
+  font-size: 15px;
+  color: white;
+}
+.priceTable {
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.4);
+  background-color: #282828;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  border-color: #444444;
+  border-width: 0px;
+  border-style: solid;
+  padding: 10px;
+  max-height: 350px;
+  overflow: auto;
+  font-size: small;
+}
+.buttonBack {
+  background-color: #e2e8c0;
+  color: #313131;
+  font-family: "Bangers", sans-serif;
+  font-size: 22px;
+  padding: 4px 12px;
+  border: none;
+  text-align: center;
+  border-radius: 5px;
+  margin-bottom: 3px;
+  width: 100%;
+  margin-top: 15px;
+  transition:
+    background-color 0.3s,
+    transform 0.2s,
+    box-shadow 0.3s;
+}
+.buttonBack:hover {
+  background-color: #f8ffd4;
+  transform: translateY(2px);
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+}
+.logo {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+  vertical-align: middle;
+  border-radius: 5px;
+}
+.errorMessage {
+  font-family: "Bangers", sans-serif;
+  font-weight: 400;
+  margin-top: 10px;
+  font-size: 21px;
+
+  letter-spacing: 2px;
+}
+#cooldown {
+  color: #e2e8c0;
+  font-family: "Bangers", sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+}
+.invitationElement {
+  font-family: "Bangers", sans-serif;
+  max-height: 55;
+  align-items: center;
+  background-color: #eff9f0;
+  border-radius: 10px;
+  padding: 5px;
+  display: flex;
+  justify-content: space-between;
+}
+ul {
+  flex-direction: column;
+  display: flex;
+  padding: 0;
+  gap: 12px;
+}
+.username {
+  max-width: 120px;
+  font-size: 18px;
+  flex-grow: 1;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 1px;
+}
+.button99 {
+  background-color: #e2e8c0;
+  color: #313131;
+  font-family: "Bangers", sans-serif;
+  font-size: 22px;
+  padding: 4px 12px;
+  border: none;
+  text-align: center;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  cursor: default;
+}
+.notification {
+  color: #e2e8c0;
+  position: fixed;
+  top: 28px;
+  right: -300px;
+  padding: 10px;
+  border: 1px solid #000;
+  border-radius: 5px;
+  background-color: #282828;
+  transition: right 0.5s;
+  z-index: 1000;
+  display: flex;
+  text-align: center;
+  align-items: center;
+  font-size: 16px;
+}
+.notification.slideIn {
+  right: 28px;
+}
+.notification.slideOut {
+  right: -300px;
+}
+.stateLogo {
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+}
+#chatingContent {
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.4);
+  background-color: #282828;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  border-color: #444444;
+  border-width: 0px;
+  border-style: solid;
+  padding: 15px;
+  overflow: auto;
+  height: 470px;
+}
+#message {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
+#messageUl {
+  padding-right: 5px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  scroll-behavior: smooth;
+}
+.player1 {
+  font-size: medium;
+  font-family: "Poppins", sans-serif;
+  max-width: 80%;
+  padding: 5px;
+  border-radius: 10px;
+  background-color: #058ed9;
+  margin-left: auto;
+  border-bottom-right-radius: 0;
+  word-wrap: break-word;
+  list-style-type: none;
+}
+.player2 {
+  font-size: medium;
+  line-height: 1.5;
+  font-family: "Poppins", sans-serif;
+  max-width: 80%;
+  padding: 5px;
+  border-radius: 10px;
+  background-color: #ffeedd;
+  margin-right: auto;
+  border-top-left-radius: 0;
+  word-wrap: break-word;
+  list-style-type: none;
+}
+.sendContainer {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 10px;
+  margin-top: auto;
+}
+.messageInput {
+  outline: none;
+  width: 250px;
+  height: 35px;
+  border-radius: 5px;
+  border-width: 0px;
+  margin: 0px;
+  text-align: center;
+  border-color: #282828;
+  display: flex;
+}
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #313131;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.loader {
+  position: relative;
+  margin: 60px auto;
+  width: 50px;
+  height: 50px;
+  z-index: 999;
+}
+
+.circular {
+  animation: rotate 2s linear infinite;
+  height: 100%;
+  transform-origin: center center;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+}
+
+.path {
+  stroke: #000;
+  stroke-dasharray: 89, 200;
+  stroke-dashoffset: 1;
+  animation:
+    dash 1.5s ease-in-out infinite,
+    color 6s ease-in-out infinite;
+  stroke-linecap: round;
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 89, 200;
+    stroke-dashoffset: -35px;
+  }
+  100% {
+    stroke-dasharray: 89, 200;
+    stroke-dashoffset: -124px;
+  }
+}
