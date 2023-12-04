@@ -214,7 +214,7 @@ function backButton() {
           let manifest = chrome.runtime.getManifest();
           let version = manifest.version;
           document.getElementById("headerElem").innerHTML = DOMPurify.sanitize(`
-        <img src="../app/assets/logo_128.png" draggable="false" />
+        <img src="../app/assets/logo_256.png" draggable="false" />
         <div style="display: table-column">
         <h1 style="margin-bottom: 5px;">Heist Supervisor</h1>
         <h2 style="font-size: medium; margin: 0px; text-align: right;" id="version">${version}</h2>

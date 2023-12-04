@@ -8,6 +8,7 @@
 - Private Chat session ?
 
 */
+let withdrawBtnPath;
 let gangData;
 let newData;
 let data;
@@ -31,8 +32,7 @@ let getUl;
 let CocoTabsList;
 let CocoTabsClicked = false;
 let CocoEmissionsLoc;
-let waitForLoad;
-let waitForLoad2;
+
 let ChimpDoc;
 let TangLoc;
 let cocoDistribution;
@@ -54,7 +54,89 @@ let locCheck = false;
 let clientWalletAdress;
 let walletToInvite;
 
-initFunctions();
+function searchPlaceholder(query) {
+  const elements = document.querySelectorAll(
+    "input[placeholder], textarea[placeholder]"
+  );
+  for (let elem of elements) {
+    if (elem.placeholder === query) {
+      return elem;
+    }
+  }
+  return null;
+}
+function searchElement(query) {
+  // auto search element in DOM to prevent class update issue
+  const element = document.querySelectorAll("button, h3, h2, h1, span, div");
+  for (let elem of element) {
+    if (elem.textContent.trim() === query) {
+      return elem;
+    }
+  }
+  return null;
+}
+initFunction2();
+function initFunction2() {
+  //gang good
+  let intervalGang = setInterval(() => {
+    let gangButton = searchElement("Gangs");
+    if (gangButton) {
+      clearInterval(intervalGang);
+
+      gangMenu(gangButton);
+    }
+  }, 50);
+  //location good
+  let intervalLocation = setInterval(() => {
+    let cityPath = searchElement("City");
+    let hub = searchElement("Hub");
+    const citySwitch = cityPath.parentElement.children[1].className;
+    let locationPath = searchElement("Safehouse");
+    if (locationPath || (citySwitch.includes("_toggle--active") && hub)) {
+      clearInterval(intervalLocation);
+      startObservingWithdraw();
+      startObservingHub();
+    }
+  }, 50);
+  //chat
+  let intervalChat = setInterval(() => {
+    let chatPath = searchElement("Heist Chat");
+    if (chatPath) {
+      clearInterval(intervalChat);
+      const elementToObserve = chatPath.parentElement.children[0];
+      const observer = new MutationObserver((mutationsList, observer) => {
+        for (const mutation of mutationsList) {
+          if (
+            mutation.type === "attributes" &&
+            mutation.attributeName === "class"
+          ) {
+            const currentClasses = elementToObserve.className;
+            const includeUndefined = currentClasses.includes("undefined");
+            if (!currentClasses.includes("undefined")) {
+              sendInviteInGame();
+            }
+          }
+        }
+      });
+
+      const observerConfig = {
+        attributes: true,
+        attributeFilter: ["class"],
+      };
+      observer.observe(elementToObserve, observerConfig);
+    }
+  }, 50);
+  //notif
+  let intervalNotif = setInterval(() => {
+    let notifPath = searchElement("The heist game");
+    if (notifPath) {
+      clearInterval(intervalNotif);
+      notifTracker();
+      notifSound();
+    }
+  }, 50);
+}
+//initFunctions();
 function initFunctions() {
   let chat = setInterval(() => {
     const element = document.querySelector(
@@ -110,25 +192,26 @@ const targetElement = document.querySelector(
 );
 //get client wallet adress for chating in the Heist Supervisor APP
 function sendInviteInGame() {
-  const profilePath = document.getElementsByClassName("_messageAvatar_1yjz4_8");
-  for (let i = 0; i < profilePath.length; i++) {
-    profilePath[i].addEventListener(
+  const elem1 = document.getElementById("chat-history-bottom-position");
+  const profilePath =
+    elem1.parentElement.children[2].children[0].children[0].children[0];
+  const childElem = profilePath.parentElement.parentElement;
+  for (let i = 0; i < childElem.children.length; i++) {
+    childElem.children[i].children[0].addEventListener(
       "click",
       () => {
         window.addEventListener("getAdress", function (event) {
           if (event.detail) {
             clientWalletAdress = event.detail;
-            console.log(clientWalletAdress);
-            const injectButtonPath = document.querySelector(
-              "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div > div > aside"
-            );
+            const tradeQuerry = searchElement("TRADE");
+            const injectButtonPath = tradeQuerry.parentElement;
+            const nameClass = tradeQuerry.className;
             if (document.getElementById("sendInvite")) {
               document.getElementById("sendInvite").value = clientWalletAdress;
             } else {
               const newButton = document.createElement("button");
               newButton.id = "sendInvite";
-              newButton.className =
-                "_button_30qjg_1 _tradeButton_1pjcs_1 _tradeButton_ied2j_18 _button--yellow_30qjg_28";
+              newButton.className = nameClass;
               newButton.textContent = "Invite To Dm";
               newButton.style.marginBottom = "-16px";
               newButton.value = clientWalletAdress;
@@ -153,24 +236,15 @@ function sendInviteInGame() {
   }
 }
 function maxWithdraw() {
-  getCocoTotal = document.querySelector(
-    "#root > div.GamePage_gamePage__FUXge > div.Corner_corner__HBNBd.gameLayout_topLeft__GGaQV.Corner_corner--top-left__D8HeK > div > div.profile_col__Pqzjm > div:nth-child(1) > div > button.Button_button__85C4R.ButtonWrapper_profileButton__Tyg29.ButtonWrapper_profileButton--white-text__VfKTR.Button_button--black__id2GF > div > div:nth-child(3) > span"
-  );
-  getNanaTotal = document.querySelector(
-    "#root > div.GamePage_gamePage__FUXge > div.Corner_corner__HBNBd.gameLayout_topLeft__GGaQV.Corner_corner--top-left__D8HeK > div > div.profile_col__Pqzjm > div:nth-child(1) > div > button.Button_button__85C4R.ButtonWrapper_profileButton__Tyg29.ButtonWrapper_profileButton--white-text__VfKTR.Button_button--black__id2GF > div > div:nth-child(1) > span"
-  );
-  // withdraw menu
-  withdrawLoc = document.querySelector(
-    "#root > div._gamePage_1kclx_1 > header > div > div._profileWrapper_gvh7y_1._profile_1o38l_190 > div._withdrawDeposit_1mxp4_1 > div._submenuTabs_465f8_1"
-  );
-  maxAmountLoc = document.querySelector(
-    "#root > div.GamePage_gamePage__FUXge > div.Corner_corner__HBNBd.gameLayout_topLeft__GGaQV.Corner_corner--top-left__D8HeK > div > div.WithdrawDepositSubmenu_withdrawDeposit__1FnqH > div.Submenu_submenuContent__pn1e3"
-  );
+  getCocoTotal = withdrawBtnPath.children[0].children[2].children[1];
+  getNanaTotal = withdrawBtnPath.children[0].children[0].children[1];
+  //withdraw tab
+  const elem1 = searchElement("Available:");
+  withdrawLoc = elem1.parentElement.parentElement.firstElementChild;
+
   setTimeout(() => {
     //getMoneyIdLoc check if nana or coco is selected in withdraw menu
-    getMoneyIdLoc = document.querySelector(
-      "#root > div._gamePage_1kclx_1 > header > div > div._profileWrapper_gvh7y_1._profile_d1rj9_191 > div._withdrawDeposit_1mxp4_1 > div._submenuContent_465f8_45 > div:nth-child(3) > span > span"
-    );
+    getMoneyIdLoc = elem1.firstElementChild.firstElementChild;
     getMoneyId = getMoneyIdLoc.getAttribute("aria-label");
   }, 100);
 
@@ -216,34 +290,39 @@ function LocationStats() {
     updateLiChimp = document.querySelector("#percentChimp");
     updateLiTang = document.querySelector("#percentTang");
     // path to to the top list of location ( safe House, federal reserve....) in the location menu
-    CocoTabsList = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div > div._center_19qbs_8 > header > div > div"
-    );
+    const elem1 = searchElement("Event table");
+    CocoTabsList =
+      elem1.parentElement.parentElement.parentElement.parentElement.children[0]
+        .children[0].children[0].children[0];
+
     if (CocoTabsList) {
       CocoTabsList.addEventListener("click", function handleClick() {
         if (!CocoTabsClicked) {
-          waitForLoad2 = setInterval(LocationStats, 200);
+          console.log("click");
+          let interval1 = setInterval(() => {
+            const locQuerry = searchElement("Location Stats");
+            if (locQuerry) {
+              clearInterval(interval1);
+              LocationStats();
+            }
+          }, 50);
+
           CocoTabsList.removeEventListener("click", handleClick);
           CocoTabsClicked = true;
         }
       });
     }
     // path to the location ul container
-    getUl = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div > div._center_19qbs_8 > div._main_19qbs_28 > aside > div._asideContainer_13mm0_1 > ul"
-    );
+    const locQuerry = searchElement("Location Stats");
+    getUl = locQuerry.parentElement.parentElement.children[2];
     //path to coco emission value
-    CocoEmissionsLoc = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div > div._center_19qbs_8 > div._main_19qbs_28 > aside > div._asideContainer_13mm0_1 > ul > li:nth-child(4) > span._value_13mm0_78"
-    );
+    CocoEmissionsLoc = getUl.children[3].children[1];
     //path to number of Tang value
-    TangLoc = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div > div._center_19qbs_8 > div._main_19qbs_28 > aside > div._asideContainer_13mm0_1 > ul > li:nth-child(2) > span._value_13mm0_78"
-    );
+    TangLoc = getUl.children[1].children[1];
     //path to number of Chimp value
-    ChimpDoc = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div > div._center_19qbs_8 > div._main_19qbs_28 > aside > div._asideContainer_13mm0_1 > ul > li:nth-child(1) > span._value_13mm0_78"
-    );
+    ChimpDoc = getUl.children[0].children[1];
+    const nameClassValue = ChimpDoc.className;
+    const nameClassLabel = getUl.children[0].children[2].className;
     if (ChimpDoc) {
       const CocoToNumber = CocoEmissionsLoc.textContent;
       const Coco = parseInt(CocoToNumber) * 1000;
@@ -260,8 +339,8 @@ function LocationStats() {
       if (updateLiTang) {
         updateLiTang.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-      <span class="_value_13mm0_78">${tangPercentage}%</span>
-      <span class="_label_13mm0_87">Of Tangs</span>  
+      <span class="${nameClassValue}">${tangPercentage}%</span>
+      <span class="${nameClassLabel}">Of Tangs</span>  
 `;
       } else {
         newLiTang = document.createElement("li");
@@ -269,15 +348,15 @@ function LocationStats() {
         newLiTang.id = "percentTang";
         newLiTang.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-        <span class="_value_13mm0_78">${tangPercentage}%</span>
-        <span class="_label_13mm0_87">Of Tangs</span>  
+        <span class="${nameClassValue}">${tangPercentage}%</span>
+        <span class="${nameClassLabel}">Of Tangs</span>  
         `;
       }
       if (updateLiChimp) {
         updateLiChimp.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-      <span class="_value_13mm0_78">${chimpPercentage}%</span>
-      <span class="_label_13mm0_87">Of Chimps</span>  
+      <span class="${nameClassValue}">${chimpPercentage}%</span>
+      <span class="${nameClassLabel}">Of Chimps</span>  
 `;
       } else {
         newLiChimp = document.createElement("li");
@@ -285,15 +364,15 @@ function LocationStats() {
         newLiChimp.id = "percentChimp";
         newLiChimp.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-        <span class="_value_13mm0_78">${chimpPercentage}%</span>
-        <span class="_label_13mm0_87">Of Chimps</span>  
+        <span class="${nameClassValue}">${chimpPercentage}%</span>
+        <span class="${nameClassLabel}">Of Chimps</span>  
         `;
       }
       if (updateLiStats) {
         updateLiStats.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-        <span class="_value_13mm0_78">${cocoDistribution}</span>
-        <span class="_label_13mm0_87">$COCO per TANG/CHIMP</span>
+        <span class="${nameClassValue}">${cocoDistribution}</span>
+        <span class="${nameClassLabel}">$COCO per TANG/CHIMP</span>
           
 
       `;
@@ -303,8 +382,8 @@ function LocationStats() {
         newLiStat.id = "STATS";
         newLiStat.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
-        <span class="_value_13mm0_78">${cocoDistribution}</span>
-        <span class="_label_13mm0_87">$COCO per TANG/CHIMP</span>
+        <span class="${nameClassValue}">${cocoDistribution}</span>
+        <span class="${nameClassLabel}">$COCO per TANG/CHIMP</span>
       
       `;
       }
@@ -315,38 +394,11 @@ function LocationStats() {
       }
       // getUl.innerHTML += newLiStat;
 
-      clearInterval(waitForLoad);
-      clearInterval(waitForLoad2);
       CocoTabsClicked = false;
     }
   }
 }
-// Fonction pour initialiser l'observation
-function startObservingLoc() {
-  // Créez un observer avec une fonction de rappel
-  const observer = new MutationObserver((mutationsList, observer) => {
-    // Parcourez toutes les mutations détectées
-    for (const mutation of mutationsList) {
-      // Parcourez toutes les nœuds ajoutés dans cette mutation
-      for (const addedNode of mutation.addedNodes) {
-        // Vérifiez si l'élément ajouté a la classe spécifiée
-        if (
-          addedNode instanceof HTMLElement &&
-          addedNode.classList.contains("_dialogContent_19qbs_1")
-        ) {
-          waitForLoad = setInterval(LocationStats, 200);
-          elementLoadedCallback();
-          observer.disconnect();
-          setTimeout(startObservingLoc, 1000);
-          return;
-        }
-      }
-    }
-  });
-  LocationStats();
-  // Commencez à observer les mutations dans le DOM
-  observer.observe(document.body, { childList: true, subtree: true });
-}
+
 function WithdrawValue() {
   withdrawClick = true;
   maxWithdraw();
@@ -368,7 +420,6 @@ function WithdrawValue() {
 
 function startObservingHub() {
   const elementToObserve = document.querySelector("#root");
-
   // Créez une instance de MutationObserver
   const observer = new MutationObserver((mutationsList, observer) => {
     // Parcourez toutes les mutations détectées
@@ -383,12 +434,40 @@ function startObservingHub() {
 
         if (isAriaHiddenTrue) {
           inHub = true;
-          setTimeout(nftRecruitment, 700);
-          setTimeout(raffleTicket, 700);
-          setTimeout(LocationStats, 700);
-          initFunction();
+          let interval = setInterval(() => {
+            const checkLoc = searchElement("Location Stats");
+            const checkHub = searchElement("Blackmarket");
+            if (checkLoc) {
+              clearInterval(interval);
+              setTimeout(LocationStats, 700);
+            }
+            if (checkHub) {
+              clearInterval(interval);
+
+              let interval1 = setInterval(() => {
+                const elem1 = searchElement("ORANGUTANS COMING");
+                if (elem1) {
+                  try {
+                    const elem2 =
+                      elem1.parentElement.parentElement.parentElement
+                        .children[1].children[1].children[1].children[1]
+                        .firstElementChild.firstElementChild;
+                    if (elem2) {
+                      clearInterval(interval1);
+                      setTimeout(nftRecruitment, 700);
+                      setTimeout(raffleTicket, 700);
+                    }
+                  } catch (error) {}
+                }
+              }, 50);
+            }
+          }, 100);
         } else {
-          setTimeout(gangMenu, 700);
+          console.log("redo");
+          const path = searchElement("Gangs");
+          setTimeout(() => {
+            gangMenu(path);
+          }, 700);
           inHub = false;
         }
       }
@@ -404,23 +483,20 @@ function startObservingHub() {
 
 function startObservingWithdraw() {
   // location of the withdraw / deposit Tab
-  const elementToObserve = document.querySelector(
-    "#root > div._gamePage_1kclx_1 > header > div > div._profileWrapper_gvh7y_1._profile_d1rj9_191 > div._col_gvh7y_15 > div._row_gvh7y_9 > div > button:nth-child(1)"
-  );
-  // Créez une fonction de rappel pour l'observateur
+  const elem1 = searchElement("Gangs");
+  const elem2 = elem1.parentElement;
+  const elem3 = elem2.children[1];
+  const elementToObserve = elem3.firstElementChild;
+  withdrawBtnPath = elementToObserve;
+
   const observerCallback = (mutationsList, observer) => {
     mutationsList.forEach((mutation) => {
-      // Vérifiez si la mutation concerne les classes de l'élément observé
       if (
         mutation.type === "attributes" &&
         mutation.attributeName === "class"
       ) {
         const currentClasses = elementToObserve.className;
-        const containsProfileHidden = currentClasses.includes(
-          "_button--black_30qjg_34"
-        );
-
-        // Vérifiez si la classe profile_hidden__Z+uMq est ajoutée ou supprimée
+        const containsProfileHidden = currentClasses.includes("_button--black");
         if (!containsProfileHidden) {
           // La classe a été ajoutée
           withdrawClick = false;
@@ -481,27 +557,25 @@ function nftRecruitment() {
 }
 function raffleTicket() {
   if (inHub === true) {
-    //path for append child
-    const raffleLoc1 = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div._socialContent_1tyqk_1._tabContent_75try_15 > div._main_1tyqk_169 > div._mainContent_1tyqk_241 > div._mainContentRight_1tyqk_249 > div._itemRafflesWrapper_1tyqk_1365 > div.swiper.swiper-initialized.swiper-horizontal.swiper-pointer-events._offerSlider_15vt8_1._raffles_1tyqk_694 > div > div.swiper-slide._offerSlide_15vt8_1._offerSlide--featured_15vt8_64.swiper-slide-active > div > div._offerInfo_17ipg_88"
-    );
-    const raffleLoc2 = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div._socialContent_1tyqk_1._tabContent_75try_15 > div._main_1tyqk_169 > div._mainContent_1tyqk_241 > div._mainContentRight_1tyqk_249 > div._itemRafflesWrapper_1tyqk_1365 > div.swiper.swiper-initialized.swiper-horizontal.swiper-pointer-events._offerSlider_15vt8_1._raffles_1tyqk_694 > div > div.swiper-slide._offerSlide_15vt8_1._offerSlide--featured_15vt8_64.swiper-slide-next > div > div._offerInfo_17ipg_88"
-    );
+    //path of the raffel1 raffle2 ( all the tab)
+    const elem1 = searchElement("ORANGUTANS COMING");
+    const elem2 =
+      elem1.parentElement.parentElement.parentElement.children[1].children[1]
+        .children[1].children[1].firstElementChild;
+    const tab1 = elem2.children[0];
+    const tab2 = elem2.children[1];
+    //append elem
+    const raffleLoc1 = tab1.children[0].children[0];
+    const raffleLoc2 = tab2.children[0].children[0];
     // path where total item in the raffle
-    const qtyRaffle1 = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div._socialContent_1tyqk_1._tabContent_75try_15 > div._main_1tyqk_169 > div._mainContent_1tyqk_241 > div._mainContentRight_1tyqk_249 > div._itemRafflesWrapper_1tyqk_1365 > div.swiper.swiper-initialized.swiper-horizontal.swiper-pointer-events._offerSlider_15vt8_1._raffles_1tyqk_694 > div > div.swiper-slide._offerSlide_15vt8_1._offerSlide--featured_15vt8_64.swiper-slide-active > div > div._offerInfo_17ipg_88 > div._offerStock_17ipg_106"
-    );
-    const qtyRaffle2 = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div._socialContent_1tyqk_1._tabContent_75try_15 > div._main_1tyqk_169 > div._mainContent_1tyqk_241 > div._mainContentRight_1tyqk_249 > div._itemRafflesWrapper_1tyqk_1365 > div.swiper.swiper-initialized.swiper-horizontal.swiper-pointer-events._offerSlider_15vt8_1._raffles_1tyqk_694 > div > div.swiper-slide._offerSlide_15vt8_1._offerSlide--featured_15vt8_64.swiper-slide-next > div > div._offerInfo_17ipg_88 > div._offerStock_17ipg_106"
-    );
+    const qtyRaffle1 = raffleLoc1.children[1];
+    const qtyRaffle2 = raffleLoc2.children[1];
+    const nameClass = qtyRaffle1.className;
     //path where total ticket purchased by all players
-    const qtyTicket1 = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div._socialContent_1tyqk_1._tabContent_75try_15 > div._main_1tyqk_169 > div._mainContent_1tyqk_241 > div._mainContentRight_1tyqk_249 > div._itemRafflesWrapper_1tyqk_1365 > div.swiper.swiper-initialized.swiper-horizontal.swiper-pointer-events._offerSlider_15vt8_1._raffles_1tyqk_694 > div > div.swiper-slide._offerSlide_15vt8_1._offerSlide--featured_15vt8_64.swiper-slide-active > div > div._infoContainer_17ipg_147 > div > div:nth-child(1) > p._value_17ipg_183._green_17ipg_194._soldOut_17ipg_197"
-    );
-    const qtyTicket2 = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div._socialContent_1tyqk_1._tabContent_75try_15 > div._main_1tyqk_169 > div._mainContent_1tyqk_241 > div._mainContentRight_1tyqk_249 > div._itemRafflesWrapper_1tyqk_1365 > div.swiper.swiper-initialized.swiper-horizontal.swiper-pointer-events._offerSlider_15vt8_1._raffles_1tyqk_694 > div > div.swiper-slide._offerSlide_15vt8_1._offerSlide--featured_15vt8_64.swiper-slide-next > div > div._infoContainer_17ipg_147 > div > div:nth-child(1) > p._value_17ipg_183._green_17ipg_194._soldOut_17ipg_197"
-    );
+    const qtyTicket1 =
+      tab1.children[0].children[3].children[0].children[0].children[1];
+    const qtyTicket2 =
+      tab2.children[0].children[3].children[0].children[0].children[1];
     if (qtyRaffle1) {
       let cleanRaffle1 = qtyRaffle1.textContent;
       let matche1 = cleanRaffle1.match(/\d+/);
@@ -516,17 +590,24 @@ function raffleTicket() {
       roundRaffle1 = raffleChance1.toFixed(3);
       roundRaffle2 = raffleChance2.toFixed(3);
     }
+
     if (raffleLoc1) {
       if (hubHtml === false) {
         const div1 = document.createElement("div");
-        div1.className = "_offerStock_17ipg_106";
+        div1.className = nameClass;
+        div1.id = "raffle1";
         div1.textContent = roundRaffle1 + "% chance per ticket";
-        raffleLoc1.appendChild(div1);
+        if (!document.getElementById("raffle1")) {
+          raffleLoc1.appendChild(div1);
+        }
 
         const div2 = document.createElement("div");
-        div2.className = "_offerStock_17ipg_106";
+        div2.className = nameClass;
+        div2.id = "raffle2";
         div2.textContent = roundRaffle2 + "% chance per ticket";
-        raffleLoc2.appendChild(div2);
+        if (!document.getElementById("raffle2")) {
+          raffleLoc2.appendChild(div2);
+        }
       }
     }
   }
@@ -540,24 +621,12 @@ function betterVault() {
     vaultLoc.style.left = "-100px";
   }
 }
-function initFunction() {
-  if (inHub === true) {
-    const vaultButton = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.Dialog_scrollPaper__BgbbA.css-ekeie0 > div > div.socialHub_navigation__nkHuP > div > div:nth-child(2) > button"
-    );
-    if (vaultButton) {
-      vaultButton.addEventListener("click", () => {
-        setTimeout(betterVault, 300);
-      });
-    }
-  }
-}
+
 function notifSound() {
   let firstLauch = true;
   let event = new CustomEvent("notification");
-  const notifCounter = document.querySelector(
-    "#root > div._gamePage_1kclx_1 > header > div > div._gameScreenTitle_d1rj9_25.MuiBox-root.css-0 > div._topRightSideWrapper_d1rj9_48 > div > span"
-  );
+  const elem1 = searchElement("The heist game");
+  const notifCounter = elem1.parentElement.children[0].children[1];
   let notif = parseFloat(notifCounter.textContent);
 
   const observer = new MutationObserver((mutations) => {
@@ -608,21 +677,18 @@ function notifTracker() {
     return realXHR;
   }
   window.XMLHttpRequest = newXHR;
-  const elementToObserve = document.querySelector(
-    "#root > div._gamePage_1kclx_1 > header > div > div._gameScreenTitle_d1rj9_25.MuiBox-root.css-0 > div._topRightSideWrapper_d1rj9_48 > div > div"
-  );
-  // Créez une fonction de rappel pour l'observateur
+  const elem1 = searchElement("The heist game");
+  const elementToObserve = elem1.parentElement.children[0].children[0];
+
   const observerCallback = (mutationsList, observer) => {
     mutationsList.forEach((mutation) => {
-      // Vérifiez si la mutation concerne les classes de l'élément observé
       if (
         mutation.type === "attributes" &&
         mutation.attributeName === "class"
       ) {
         const currentClasses = elementToObserve.className;
-        const classChange = currentClasses.includes("_active_xiugy_25");
+        const classChange = currentClasses.includes("_active");
 
-        // Vérifiez si la classe profile_hidden__Z+uMq est ajoutée ou supprimée
         if (classChange) {
           setTimeout(openNotifProfile, 1000);
         }
@@ -653,22 +719,15 @@ function addNewNotif(newNotif) {
 }
 
 function searchPlayer(walletAdress, playerName) {
-  const hubBtn = document.querySelector(
-    "#root > div._gamePage_1kclx_1 > header > div > div._profileWrapper_gvh7y_1._profile_d1rj9_191 > div._col_gvh7y_15 > div._row_gvh7y_9 > button._button_30qjg_1._dialogButton_y0mou_1._hubButton_gvh7y_67"
-  );
-
+  const hubBtn = searchElement("Hub");
   hubBtn.click();
   let checkLoad = setInterval(() => {
-    const searchBtn = document.querySelector(
-      "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div._socialContent_raey6_1._tabContent_75try_15 > div._sidebar_raey6_37 > div._peelCityStats_raey6_49 > div > div:nth-child(2) > button"
-    );
+    const searchBtn = searchElement("Player search").firstElementChild;
     if (searchBtn) {
       clearInterval(checkLoad);
       searchBtn.click();
       let checkLoad2 = setInterval(() => {
-        const placeHolder = document.querySelector(
-          "body > div:nth-child(5) > div.MuiDialog-container.MuiDialog-scrollPaper.css-ekeie0 > div > div._textfieldWrapper_4ppwh_1._playerSearchInputWrapper_4m2f6_139 > input"
-        );
+        const placeHolder = searchPlaceholder("Player Search");
         if (placeHolder) {
           clearInterval(checkLoad2);
           let inputEvent = Object.getOwnPropertyDescriptor(
@@ -693,92 +752,119 @@ function searchPlayer(walletAdress, playerName) {
     }
   }, 30);
 }
-function gangMenu() {
-  console.log("reloaded");
-  const gangBtn = document.querySelector(
-    "#root > div._gamePage_1kclx_1 > header > div > div._profileWrapper_gvh7y_1._profile_d1rj9_191 > div._col_gvh7y_15 > div._row_gvh7y_9 > button._button_30qjg_1._gangsButton_gvh7y_49"
-  );
+function howManyLeftClass(element) {
+  const classes = element.className.split(" ");
+  const motif = /_left/;
+  let compte = 0;
 
-  gangBtn.addEventListener(
-    "click",
-    () => {
-      console.log("inside");
-      let interval = setInterval(() => {
-        const elementToObserve = document.querySelector(
-          "body > div.MuiDialog-root._dialogRoot_a1f8c_1.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > main > div._left_1wbk4_23"
-        );
-        const alreadyInGang = document.querySelector(
-          "body > div.MuiDialog-root._dialogRoot_a1f8c_1.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > main > div._left_1wbk4_23._left--65_1wbk4_29"
-        );
-        if (alreadyInGang) {
-          console.log("elem2");
-          clearInterval(interval);
-          getGangPlayer();
-          const observerCallback = (mutationsList, observer) => {
-            mutationsList.forEach((mutation) => {
-              if (
-                mutation.type === "attributes" &&
-                mutation.attributeName === "class"
-              ) {
-                const currentClasses = elementToObserve.className;
-                const classChange =
-                  currentClasses.includes("_left--65_1wbk4_29");
+  classes.forEach((classe) => {
+    if (motif.test(classe)) {
+      compte++;
+    }
+  });
 
-                if (classChange) {
-                  getGangPlayer();
-                }
-              }
-            });
-          };
-          const observer = new MutationObserver(observerCallback);
-          const observerConfig = {
-            attributes: true,
-            attributeFilter: ["class"],
-          };
-          observer.observe(elementToObserve, observerConfig);
-        } else if (elementToObserve) {
-          console.log("elem1");
-          clearInterval(interval);
-          const observerCallback = (mutationsList, observer) => {
-            mutationsList.forEach((mutation) => {
-              if (
-                mutation.type === "attributes" &&
-                mutation.attributeName === "class"
-              ) {
-                const currentClasses = elementToObserve.className;
-                const classChange =
-                  currentClasses.includes("_left--65_1wbk4_29");
-
-                if (classChange) {
-                  getGangPlayer();
-                }
-              }
-            });
-          };
-          const observer = new MutationObserver(observerCallback);
-          const observerConfig = {
-            attributes: true,
-            attributeFilter: ["class"],
-          };
-          observer.observe(elementToObserve, observerConfig);
-        }
-      }, 50);
-    },
-    { once: true }
-  );
+  return compte;
 }
+function gangMenu(path) {
+  const gangBtn = path;
 
-function getGangPlayer() {
-  let interval = setInterval(() => {
-    const playerListPath = document.querySelector(
-      "body > div.MuiDialog-root._dialogRoot_a1f8c_1.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > main > div._left_1wbk4_23._left--65_1wbk4_29 > div > div._left_pcv7l_11"
+  if (gangBtn) {
+    gangBtn.addEventListener(
+      "click",
+      () => {
+        console.log("inside");
+        let interval = setInterval(() => {
+          //retrieve element to observe ( left gang tab)
+          let elementToObserve;
+          const child = document.getElementById("gang-scroller");
+
+          if (child) {
+            elementToObserve = child.parentElement.parentElement;
+          } else {
+            const child1 =
+              searchElement("MEMBERS").parentElement.parentElement.parentElement
+                .parentElement;
+            elementToObserve = child1;
+          }
+
+          //check if view gang is in dom
+          let closeBtn;
+          let alreadyInGang = searchElement("VIEW GANG");
+
+          if (alreadyInGang) {
+            closeBtn = alreadyInGang.nextElementSibling;
+          } else {
+            let backButton =
+              searchElement("BACK").parentElement.parentElement.children[1]
+                .firstElementChild;
+            closeBtn = backButton;
+          }
+
+          if (!alreadyInGang) {
+            console.log("elem2");
+            clearInterval(interval);
+            getGangPlayer();
+            const observerCallback = (mutationsList, observer) => {
+              mutationsList.forEach((mutation) => {
+                if (
+                  mutation.type === "attributes" &&
+                  mutation.attributeName === "class"
+                ) {
+                  const state = howManyLeftClass(elementToObserve);
+                  if (state === 2) {
+                    getGangPlayer(elementToObserve);
+                  }
+                }
+              });
+            };
+            const observer = new MutationObserver(observerCallback);
+            const observerConfig = {
+              attributes: true,
+              attributeFilter: ["class"],
+            };
+            observer.observe(elementToObserve, observerConfig);
+          } else if (elementToObserve) {
+            console.log("elem1");
+            clearInterval(interval);
+            const observerCallback = (mutationsList, observer) => {
+              mutationsList.forEach((mutation) => {
+                if (
+                  mutation.type === "attributes" &&
+                  mutation.attributeName === "class"
+                ) {
+                  const state = howManyLeftClass(elementToObserve);
+                  if (state === 2) {
+                    getGangPlayer(elementToObserve, closeBtn);
+                  }
+                }
+              });
+            };
+            const observer = new MutationObserver(observerCallback);
+            const observerConfig = {
+              attributes: true,
+              attributeFilter: ["class"],
+            };
+            observer.observe(elementToObserve, observerConfig);
+          }
+        }, 50);
+      },
+      { once: true }
     );
-    if (playerListPath) {
-      console.log(gangData);
-      const playerPath = document.querySelector(
-        "body > div.MuiDialog-root._dialogRoot_a1f8c_1.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > main > div._left_1wbk4_23._left--65_1wbk4_29 > div > div._left_pcv7l_11 > div._scrollable_1t6tk_1._memberScroll_pcv7l_52"
-      );
-      playerPath.removeChild(playerPath.children[0]);
+  }
+}
+// ne detecte plsu la <div></div>
+function getGangPlayer(parent, closeBtn) {
+  let interval = setInterval(() => {
+    console.log(parent);
+    const child1 = parent.children[0].children[0];
+    const playerPath = child1.children[1];
+    if (playerPath) {
+      let firstChild = playerPath.firstElementChild;
+      let className = playerPath.children[1].className;
+      if (firstChild && firstChild.className != className) {
+        console.log("heheeh");
+        playerPath.removeChild(playerPath.children[0]);
+      }
       clearInterval(interval);
       let membershipsIndex = 0;
       for (let i = 0; i < playerPath.children.length; i++) {
@@ -789,12 +875,12 @@ function getGangPlayer() {
         }
         let item = playerPath.children[i];
         let member = gangData.memberships[membershipsIndex];
+
         item.addEventListener("click", () => {
           let playerName = member.wallet.username;
           let wallet = member.walletId;
-          console.log(wallet);
-          console.log(playerName);
-          openProfileFromGang(playerName, wallet);
+
+          openProfileFromGang(playerName, wallet, closeBtn);
         });
 
         // ajouter la fonction recherche de l'user
@@ -802,32 +888,24 @@ function getGangPlayer() {
     }
   }, 300);
 }
-function openProfileFromGang(username, wallet) {
+function openProfileFromGang(username, wallet, closeBtn) {
   let interval1 = setInterval(() => {
-    const closeGang = document.querySelector(
-      "body > div.MuiDialog-root._dialogRoot_a1f8c_1.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > header > div._banner_1e33g_9 > div._topRightCorner_1e33g_52 > div._right_1e33g_60 > button._button_30qjg_1._closeButton_gzrf2_1._closeButton_1e33g_75._button--gray_30qjg_31"
-    );
-    if (closeGang) {
+    if (closeBtn) {
       clearInterval(interval1);
-      closeGang.click();
+      closeBtn.click();
       let interval2 = setInterval(() => {
-        const hubBtn = document.querySelector(
-          "#root > div._gamePage_1kclx_1 > header > div > div._profileWrapper_gvh7y_1._profile_d1rj9_191 > div._col_gvh7y_15 > div._row_gvh7y_9 > button._button_30qjg_1._dialogButton_y0mou_1._hubButton_gvh7y_67"
-        );
+        const hubBtn = searchElement("Hub");
         if (hubBtn) {
           clearInterval(interval2);
           hubBtn.click();
           let interval3 = setInterval(() => {
-            const searchPlayerBtn = document.querySelector(
-              "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper._scrollPaper_gnyli_18.css-ekeie0 > div > div._socialContent_raey6_1._tabContent_75try_15 > div._sidebar_raey6_37 > div._peelCityStats_raey6_49 > div > div:nth-child(2) > button"
-            );
+            const searchPlayerBtn =
+              searchElement("Player search").firstElementChild;
             if (searchPlayerBtn) {
               clearInterval(interval3);
               searchPlayerBtn.click();
               let interval4 = setInterval(() => {
-                const placeHolder = document.querySelector(
-                  "body > div:nth-child(5) > div.MuiDialog-container.MuiDialog-scrollPaper.css-ekeie0 > div > div._textfieldWrapper_4ppwh_1._playerSearchInputWrapper_4m2f6_139 > input"
-                );
+                const placeHolder = searchPlaceholder("Player Search");
                 if (placeHolder) {
                   clearInterval(interval4);
                   let inputEvent = Object.getOwnPropertyDescriptor(
