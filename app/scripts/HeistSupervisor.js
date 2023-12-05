@@ -79,7 +79,7 @@ function searchElement(query) {
 }
 initFunction2();
 function initFunction2() {
-  //gang good
+  //gang
   let intervalGang = setInterval(() => {
     let gangButton = searchElement("Gangs");
     if (gangButton) {
@@ -88,17 +88,19 @@ function initFunction2() {
       gangMenu(gangButton);
     }
   }, 50);
-  //location good
+  //location
   let intervalLocation = setInterval(() => {
     let cityPath = searchElement("City");
     let hub = searchElement("Hub");
-    const citySwitch = cityPath.parentElement.children[1].className;
-    let locationPath = searchElement("Safehouse");
-    if (locationPath || (citySwitch.includes("_toggle--active") && hub)) {
-      clearInterval(intervalLocation);
-      startObservingWithdraw();
-      startObservingHub();
-    }
+    try {
+      const citySwitch = cityPath.parentElement.children[1].className;
+      let locationPath = searchElement("Safehouse");
+      if (locationPath || (citySwitch.includes("_toggle--active") && hub)) {
+        clearInterval(intervalLocation);
+        startObservingWithdraw();
+        startObservingHub();
+      }
+    } catch (error) {}
   }, 50);
   //chat
   let intervalChat = setInterval(() => {
@@ -138,50 +140,6 @@ function initFunction2() {
     }
   }, 50);
 }
-//initFunctions();
-function initFunctions() {
-  let chat = setInterval(() => {
-    const element = document.querySelector(
-      "#root > div._gamePage_1kclx_1 > footer > div._feed_ztp6w_1._feed_d1rj9_182._feed--show_d1rj9_187 > div > div._tabs_ztp6w_30 > button._tab_ztp6w_30"
-    );
-    if (element) {
-      if (!element.classList.contains("undefined")) {
-        sendInviteInGame();
-        clearInterval(chat);
-      }
-    }
-  }, 50);
-  let location = setInterval(() => {
-    const location1 = document.querySelector(
-      "#root > div._gamePage_1kclx_1 > div.react-transform-wrapper.transform-component-module_wrapper__7HFJe._mapWrapper_1vun4_1 > div > div:nth-child(6) > div._locationTooltipWrapper_1vun4_107 > div > div > div > div._locationTitle_axp6f_21.MuiBox-root.css-0 > h2"
-    );
-    if (location1) {
-      clearInterval(location);
-      startObservingWithdraw();
-      startObservingHub();
-    }
-  }, 50);
-  let notif = setInterval(() => {
-    const notifPath = document.querySelector(
-      "#root > div._gamePage_1kclx_1 > header > div > div._gameScreenTitle_d1rj9_25.MuiBox-root.css-0 > div._topRightSideWrapper_d1rj9_48 > div"
-    );
-    if (notifPath) {
-      clearInterval(notif);
-      notifTracker();
-      notifSound();
-    }
-  }, 50);
-
-  let gang = setInterval(() => {
-    const gangBtn = document.querySelector(
-      "#root > div._gamePage_1kclx_1 > header > div > div._profileWrapper_gvh7y_1._profile_d1rj9_191 > div._col_gvh7y_15 > div._row_gvh7y_9 > button._button_30qjg_1._gangsButton_gvh7y_49"
-    );
-    if (gangBtn) {
-      clearInterval(gang);
-      gangMenu();
-    }
-  }, 50);
-}
 
 const walletAddressRegex =
   /https:\/\/api\.theheist\.game\/nft\/robbers\/wallet-top-performing\/([\w]+)/;
@@ -192,6 +150,34 @@ const locTarget = document.querySelector(
 const targetElement = document.querySelector(
   "body > div.MuiDialog-root.location_root__6XsDH.MuiModal-root.css-126xj0f"
 );
+
+function addInviteButtonInProfile() {
+  window.addEventListener("getAdress", function (event) {
+    if (event.detail) {
+      clientWalletAdress = event.detail;
+      const tradeQuerry = searchElement("TRADE");
+      const injectButtonPath = tradeQuerry.parentElement;
+      const nameClass = tradeQuerry.className;
+      if (document.getElementById("sendInvite")) {
+        document.getElementById("sendInvite").value = clientWalletAdress;
+      } else {
+        const newButton = document.createElement("button");
+        newButton.id = "sendInvite";
+        newButton.className = nameClass;
+        newButton.textContent = "Invite To Dm";
+        newButton.style.marginBottom = "-16px";
+        newButton.value = clientWalletAdress;
+        injectButtonPath.insertBefore(newButton, injectButtonPath.firstChild);
+      }
+
+      const sendButton = document.getElementById("sendInvite");
+      sendButton.addEventListener("click", () => {
+        localStorage.setItem("adressToInvite", clientWalletAdress);
+        window.postMessage({ type: "openInvitePopup" }, "*");
+      });
+    }
+  });
+}
 //get client wallet adress for chating in the Heist Supervisor APP
 function sendInviteInGame() {
   const elem1 = document.getElementById("chat-history-bottom-position");
@@ -202,38 +188,11 @@ function sendInviteInGame() {
     childElem.children[i].children[0].addEventListener(
       "click",
       () => {
-        window.addEventListener("getAdress", function (event) {
-          if (event.detail) {
-            clientWalletAdress = event.detail;
-            const tradeQuerry = searchElement("TRADE");
-            const injectButtonPath = tradeQuerry.parentElement;
-            const nameClass = tradeQuerry.className;
-            if (document.getElementById("sendInvite")) {
-              document.getElementById("sendInvite").value = clientWalletAdress;
-            } else {
-              const newButton = document.createElement("button");
-              newButton.id = "sendInvite";
-              newButton.className = nameClass;
-              newButton.textContent = "Invite To Dm";
-              newButton.style.marginBottom = "-16px";
-              newButton.value = clientWalletAdress;
-              injectButtonPath.insertBefore(
-                newButton,
-                injectButtonPath.firstChild
-              );
-            }
-            function handleClick() {
-              localStorage.setItem("adressToInvite", clientWalletAdress);
-              window.postMessage({ type: "openInvitePopup" }, "*");
-            }
-
-            const sendButton = document.getElementById("sendInvite");
-            sendButton.removeEventListener("click", handleClick);
-            sendButton.addEventListener("click", handleClick, { once: true });
-          }
-        });
+        addInviteButtonInProfile();
       },
-      { once: true }
+      {
+        once: true,
+      }
     );
   }
 }
@@ -293,111 +252,112 @@ function LocationStats() {
     updateLiTang = document.querySelector("#percentTang");
     // path to to the top list of location ( safe House, federal reserve....) in the location menu
     const elem1 = searchElement("Event table");
-    CocoTabsList =
-      elem1.parentElement.parentElement.parentElement.parentElement.children[0]
-        .children[0].children[0].children[0];
+    try {
+      CocoTabsList =
+        elem1.parentElement.parentElement.parentElement.parentElement
+          .children[0].children[0].children[0].children[0];
 
-    if (CocoTabsList) {
-      CocoTabsList.addEventListener("click", function handleClick() {
-        if (!CocoTabsClicked) {
-          console.log("click");
-          let interval1 = setInterval(() => {
-            const locQuerry = searchElement("Location Stats");
-            if (locQuerry) {
-              clearInterval(interval1);
-              LocationStats();
-            }
-          }, 50);
+      if (CocoTabsList) {
+        CocoTabsList.addEventListener("click", function handleClick() {
+          if (!CocoTabsClicked) {
+            let interval1 = setInterval(() => {
+              const locQuerry = searchElement("Location Stats");
+              if (locQuerry) {
+                clearInterval(interval1);
+                LocationStats();
+              }
+            }, 50);
 
-          CocoTabsList.removeEventListener("click", handleClick);
-          CocoTabsClicked = true;
-        }
-      });
-    }
-    // path to the location ul container
-    const locQuerry = searchElement("Location Stats");
-    getUl = locQuerry.parentElement.parentElement.children[2];
-    //path to coco emission value
-    CocoEmissionsLoc = getUl.children[3].children[1];
-    //path to number of Tang value
-    TangLoc = getUl.children[1].children[1];
-    //path to number of Chimp value
-    ChimpDoc = getUl.children[0].children[1];
-    const nameClassValue = ChimpDoc.className;
-    const nameClassLabel = getUl.children[0].children[2].className;
-    if (ChimpDoc) {
-      const CocoToNumber = CocoEmissionsLoc.textContent;
-      const Coco = parseInt(CocoToNumber) * 1000;
-      let Tangtxt = TangLoc.textContent;
-      let Chimptxt = ChimpDoc.textContent;
-      let Tang = parseInt(Tangtxt);
-      let Chimp = parseInt(Chimptxt);
+            CocoTabsList.removeEventListener("click", handleClick);
+            CocoTabsClicked = true;
+          }
+        });
+      }
+      // path to the location ul container
+      const locQuerry = searchElement("Location Stats");
+      getUl = locQuerry.parentElement.parentElement.children[2];
+      //path to coco emission value
+      CocoEmissionsLoc = getUl.children[3].children[1];
+      //path to number of Tang value
+      TangLoc = getUl.children[1].children[1];
+      //path to number of Chimp value
+      ChimpDoc = getUl.children[0].children[1];
+      const nameClassValue = ChimpDoc.className;
+      const nameClassLabel = getUl.children[0].children[2].className;
+      if (ChimpDoc) {
+        const CocoToNumber = CocoEmissionsLoc.textContent;
+        const Coco = parseInt(CocoToNumber) * 1000;
+        let Tangtxt = TangLoc.textContent;
+        let Chimptxt = ChimpDoc.textContent;
+        let Tang = parseInt(Tangtxt);
+        let Chimp = parseInt(Chimptxt);
 
-      tangPercentage = Math.round((Tang / (Tang + Chimp)) * 100);
-      chimpPercentage = Math.round((Chimp / (Tang + Chimp)) * 100);
+        tangPercentage = Math.round((Tang / (Tang + Chimp)) * 100);
+        chimpPercentage = Math.round((Chimp / (Tang + Chimp)) * 100);
 
-      cocoDistribution = Math.floor(Coco / (Tang + Chimp));
+        cocoDistribution = Math.floor(Coco / (Tang + Chimp));
 
-      if (updateLiTang) {
-        updateLiTang.innerHTML = `
+        if (updateLiTang) {
+          updateLiTang.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
       <span class="${nameClassValue}">${tangPercentage}%</span>
       <span class="${nameClassLabel}">Of Tangs</span>  
 `;
-      } else {
-        newLiTang = document.createElement("li");
-        newLiTang.className = "_asideListItem_13mm0_67";
-        newLiTang.id = "percentTang";
-        newLiTang.innerHTML = `
+        } else {
+          newLiTang = document.createElement("li");
+          newLiTang.className = "_asideListItem_13mm0_67";
+          newLiTang.id = "percentTang";
+          newLiTang.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
         <span class="${nameClassValue}">${tangPercentage}%</span>
         <span class="${nameClassLabel}">Of Tangs</span>  
         `;
-      }
-      if (updateLiChimp) {
-        updateLiChimp.innerHTML = `
+        }
+        if (updateLiChimp) {
+          updateLiChimp.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
       <span class="${nameClassValue}">${chimpPercentage}%</span>
       <span class="${nameClassLabel}">Of Chimps</span>  
 `;
-      } else {
-        newLiChimp = document.createElement("li");
-        newLiChimp.className = "_asideListItem_13mm0_67";
-        newLiChimp.id = "percentChimp";
-        newLiChimp.innerHTML = `
+        } else {
+          newLiChimp = document.createElement("li");
+          newLiChimp.className = "_asideListItem_13mm0_67";
+          newLiChimp.id = "percentChimp";
+          newLiChimp.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
         <span class="${nameClassValue}">${chimpPercentage}%</span>
         <span class="${nameClassLabel}">Of Chimps</span>  
         `;
-      }
-      if (updateLiStats) {
-        updateLiStats.innerHTML = `
+        }
+        if (updateLiStats) {
+          updateLiStats.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
         <span class="${nameClassValue}">${cocoDistribution}</span>
         <span class="${nameClassLabel}">$COCO per TANG/CHIMP</span>
           
 
       `;
-      } else {
-        newLiStat = document.createElement("li");
-        newLiStat.className = "_asideListItem_13mm0_67";
-        newLiStat.id = "STATS";
-        newLiStat.innerHTML = `
+        } else {
+          newLiStat = document.createElement("li");
+          newLiStat.className = "_asideListItem_13mm0_67";
+          newLiStat.id = "STATS";
+          newLiStat.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
         <span class="${nameClassValue}">${cocoDistribution}</span>
         <span class="${nameClassLabel}">$COCO per TANG/CHIMP</span>
       
       `;
-      }
-      if (getUl) {
-        getUl.appendChild(newLiStat);
-        getUl.appendChild(newLiChimp);
-        getUl.appendChild(newLiTang);
-      }
-      // getUl.innerHTML += newLiStat;
+        }
+        if (getUl) {
+          getUl.appendChild(newLiStat);
+          getUl.appendChild(newLiChimp);
+          getUl.appendChild(newLiTang);
+        }
+        // getUl.innerHTML += newLiStat;
 
-      CocoTabsClicked = false;
-    }
+        CocoTabsClicked = false;
+      }
+    } catch (error) {}
   }
 }
 
@@ -465,7 +425,6 @@ function startObservingHub() {
             }
           }, 100);
         } else {
-          console.log("redo");
           const path = searchElement("Gangs");
           setTimeout(() => {
             gangMenu(path);
@@ -746,6 +705,7 @@ function searchPlayer(walletAdress, playerName) {
               if (playerPath.textContent == playerName) {
                 clearInterval(checkLoad3);
                 playerPath.click();
+                addInviteButtonInProfile();
               }
             }
           }, 30);
@@ -913,6 +873,7 @@ function openProfileFromGang(username, wallet, closeBtn) {
                       if (playerPath.textContent == username) {
                         clearInterval(interval5);
                         playerPath.click();
+                        addInviteButtonInProfile();
                       }
                     }
                   }, 30);

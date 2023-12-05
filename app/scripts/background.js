@@ -1,4 +1,5 @@
 let currentAdress;
+let alreadyOpen = false;
 chrome.storage.local.get(["adress"], function (result) {
   currentAdress = result;
 });
@@ -24,12 +25,18 @@ chrome.webRequest.onCompleted.addListener(
 );
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.action === "openNotifHTML") {
-    chrome.windows.create({
-      url: chrome.runtime.getURL("./public/notification.html"),
-      type: "popup",
-      width: 388,
-      height: 568,
-    });
+    if (!alreadyOpen) {
+      alreadyOpen = true;
+      chrome.windows.create({
+        url: chrome.runtime.getURL("./public/notification.html"),
+        type: "popup",
+        width: 388,
+        height: 568,
+      });
+      setTimeout(() => {
+        alreadyOpen = false;
+      }, 1000);
+    }
     chrome.runtime.onMessage.addListener(
       function (message, sender, sendResponse) {
         if (message.type === "walletAdress") {

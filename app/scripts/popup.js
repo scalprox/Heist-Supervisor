@@ -243,6 +243,13 @@ function showNotification(type, message, duration = 5000) {
   //show notification
   const notifElem = document.createElement("div");
   notifElem.className = "notification";
+  if (type === "info") {
+    notifElem.innerHTML = DOMPurify.sanitize(`
+       <img src="../app/assets/infoLogo.png" class="stateLogo"
+    
+    <p>${message}</p>
+    `);
+  }
   if (type === "error") {
     notifElem.innerHTML = DOMPurify.sanitize(`
     
@@ -296,6 +303,7 @@ function setWalletPage() {
   });
 }
 function homePage() {
+  const openDocBtn = document.getElementById("docButton");
   const signButton = document.getElementById("signButton");
   document.getElementById("loadingOverlay").style.display = "none";
   document.getElementById("buttonList").style.display = "flex";
@@ -303,7 +311,18 @@ function homePage() {
   const bouton1 = document.getElementById("button1");
   const content1 = document.getElementById("buttonList");
   const bouton2 = document.getElementById("button2");
-
+  if (openDocBtn) {
+    openDocBtn.addEventListener(
+      "click",
+      () => {
+        window.open(
+          "https://heist-supervisor.gitbook.io/heist-supervisor/",
+          "_blank"
+        );
+      },
+      { once: true }
+    );
+  }
   if (localStorage.getItem("logged") == "false") {
     if (document.getElementById("button3")) {
       document.getElementById("button3").addEventListener("click", () => {
@@ -1334,6 +1353,13 @@ document.addEventListener("DOMContentLoaded", () => {
   activePage = "homePage";
   let signButton = document.getElementById("signButton");
   let manifest = chrome.runtime.getManifest();
+  let storedVersion = localStorage.getItem("AppVersion");
   let version = manifest.version;
+  if (!storedVersion) {
+    localStorage.setItem("AppVersion", version);
+  }
+  if (storedVersion != version) {
+    showNotification("info", "App have been updated.", 5000);
+  }
   document.getElementById("version").textContent = "V " + version;
 });
