@@ -8,6 +8,8 @@
 - Private Chat session ?
 
 */
+let classGangMenu;
+let classInGangTribe;
 let withdrawBtnPath;
 let gangData;
 let newData;
@@ -772,38 +774,28 @@ function gangMenu(path) {
     gangBtn.addEventListener(
       "click",
       () => {
-        console.log("inside");
         let interval = setInterval(() => {
           //retrieve element to observe ( left gang tab)
           let elementToObserve;
           const child = document.getElementById("gang-scroller");
-
-          if (child) {
-            elementToObserve = child.parentElement.parentElement;
-          } else {
-            const child1 =
-              searchElement("MEMBERS").parentElement.parentElement.parentElement
-                .parentElement;
-            elementToObserve = child1;
-          }
-
-          //check if view gang is in dom
+          const membersPath = searchElement("MEMBERS");
           let closeBtn;
-          let alreadyInGang = searchElement("VIEW GANG");
-
-          if (alreadyInGang) {
-            closeBtn = alreadyInGang.nextElementSibling;
-          } else {
+          if (child) {
+            closeBtn = searchElement("VIEW GANG").nextElementSibling;
+            elementToObserve = child.parentElement.parentElement;
+          } else if (membersPath) {
             let backButton =
               searchElement("BACK").parentElement.parentElement.children[1]
                 .firstElementChild;
             closeBtn = backButton;
+            elementToObserve =
+              membersPath.parentElement.parentElement.parentElement
+                .parentElement;
           }
 
-          if (!alreadyInGang) {
-            console.log("elem2");
+          if (membersPath) {
             clearInterval(interval);
-            getGangPlayer();
+            getGangPlayer(elementToObserve, closeBtn);
             const observerCallback = (mutationsList, observer) => {
               mutationsList.forEach((mutation) => {
                 if (
@@ -812,7 +804,7 @@ function gangMenu(path) {
                 ) {
                   const state = howManyLeftClass(elementToObserve);
                   if (state === 2) {
-                    getGangPlayer(elementToObserve);
+                    getGangPlayer(elementToObserve, closeBtn);
                   }
                 }
               });
@@ -823,8 +815,7 @@ function gangMenu(path) {
               attributeFilter: ["class"],
             };
             observer.observe(elementToObserve, observerConfig);
-          } else if (elementToObserve) {
-            console.log("elem1");
+          } else if (child) {
             clearInterval(interval);
             const observerCallback = (mutationsList, observer) => {
               mutationsList.forEach((mutation) => {
@@ -855,14 +846,12 @@ function gangMenu(path) {
 // ne detecte plsu la <div></div>
 function getGangPlayer(parent, closeBtn) {
   let interval = setInterval(() => {
-    console.log(parent);
     const child1 = parent.children[0].children[0];
     const playerPath = child1.children[1];
     if (playerPath) {
       let firstChild = playerPath.firstElementChild;
       let className = playerPath.children[1].className;
       if (firstChild && firstChild.className != className) {
-        console.log("heheeh");
         playerPath.removeChild(playerPath.children[0]);
       }
       clearInterval(interval);
