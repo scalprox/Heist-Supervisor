@@ -29,17 +29,15 @@ import { auth, app, db } from "./initFirebase";
 import DOMPurify from "dompurify";
 import CryptoJS from "crypto-js";
 
-/*const { logger } = require("firebase-functions");
-const { onRequest } = require("firebase-functions/v2/https");
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");*/
+// Firebase Functions
 const functions = getFunctions(app);
 const acceptInvitation = httpsCallable(functions, "acceptInvitation");
 const sendInvitation = httpsCallable(functions, "sendInvitation");
 const sendMessage = httpsCallable(functions, "sendMessage");
-let logged;
 
+let logged;
 let activePage;
-let bouton0;
+let buttonBack;
 let cleanedCoco;
 let cleanedNana;
 let cleanedSolana;
@@ -53,32 +51,10 @@ let infoSubmit;
 let invitedUid;
 let invitedUsername;
 
-/*async function checkIfDocumentExists() {
-  const key = "uid";
-  const uid = localStorage.getItem(key);
-  const docRef = doc(db, "users", uid); // Spécifiez le chemin du document que vous souhaitez vérifier
-  const walletDocRef = db.collection("users").doc(uid);
-
-  try {
-    const docSnapshot = await getDoc(docRef);
-    if (docSnapshot.exists()) {
-      console.log("Le document existe.");
-      // Faites ce que vous voulez si le document existe
-    } else {
-      console.log("Le document n'existe pas.");
-      // Faites ce que vous voulez si le document n'existe pas
-    }
-  } catch (error) {
-    console.error(
-      "Une erreur s'est produite lors de la vérification du document :",
-      error
-    );
-    // Gérez l'erreur ici
-  }
-}*/
 const birdeyeKey = localStorage.getItem("apiKey");
 const username = localStorage.getItem("username");
 const uid = localStorage.getItem("uid");
+
 function registerInDB(walletInput, nameInput) {
   const uid = localStorage.getItem("uid");
   const documentRef = doc(db, "users", uid);
@@ -102,38 +78,22 @@ function checkIfLogged(callback) {
       if (activePage !== "homePage") {
         homeLogged();
       }
-      if (document.getElementById("signButton")) {
-        document.getElementById("signButton").remove();
+      if (document.getElementById("buttonSignIn")) {
+        document.getElementById("buttonSignIn").remove();
       }
     } else {
       localStorage.setItem("logged", logged);
     }
 
-    // Appeler la fonction de callback avec l'état de connexion
     callback(logged);
-
-    // Se désabonner immédiatement après la première exécution
     unsubscribe();
   };
-
-  // Ajouter l'écouteur onAuthStateChanged et obtenir la fonction de désabonnement
   const unsubscribe = onAuthStateChanged(auth, authStateChangeCallback);
 }
 
-/*
-// Exemple d'utilisation
-checkIfLogged((isLoggedIn) => {
-  if (isLoggedIn) {
-    console.log("L'utilisateur est connecté");
-  } else {
-    console.log("L'utilisateur n'est pas connecté");
-  }
-});*/
-
-// Fonction pour afficher la page d'accueil lorsqu'un utilisateur est connecté
 function homeLogged() {
   activePage = "homePage";
-  content0 = document.getElementById("buttonList");
+  content0 = document.getElementById("dynamicContent");
   content0.style.opacity = 0;
   const xhr = new XMLHttpRequest();
   xhr.open("GET", "../../public/popupLogged.html", true);
@@ -149,10 +109,9 @@ function homeLogged() {
   setTimeout(homePage, 300);
 }
 
-// Fonction pour afficher la page d'accueil lorsque l'utilisateur n'est pas connecté
 function homeNotLog() {
   activePage = "homePage";
-  content0 = document.getElementById("buttonList");
+  content0 = document.getElementById("dynamicContent");
   content0.style.opacity = 0;
   const xhr = new XMLHttpRequest();
   xhr.open("GET", "../../public/popupNotLog.html", true);
@@ -167,15 +126,16 @@ function homeNotLog() {
   xhr.send();
   setTimeout(homePage, 300);
 }
+
 function backButton() {
-  bouton0 = document.getElementById("button0");
-  content0 = document.getElementById("buttonList");
+  buttonBack = document.getElementById("buttonBack");
+  content0 = document.getElementById("dynamicContent");
   if (
     activePage === "sendInvitePage" ||
     activePage === "manageChanelPage" ||
     activePage === "invitationPage"
   ) {
-    bouton0.addEventListener(
+    buttonBack.addEventListener(
       "click",
       () => {
         content0.style.opacity = 0;
@@ -195,7 +155,7 @@ function backButton() {
       { once: true }
     );
   } else if (activePage === "chatingPage") {
-    bouton0.addEventListener(
+    buttonBack.addEventListener(
       "click",
       () => {
         content0.style.opacity = 0;
@@ -226,7 +186,7 @@ function backButton() {
       { once: true }
     );
   } else {
-    bouton0.addEventListener(
+    buttonBack.addEventListener(
       "click",
       () => {
         if (localStorage.getItem("logged") == "true") {
@@ -239,8 +199,8 @@ function backButton() {
     );
   }
 }
+//  ↓↓ Used to show a notification in the popup, type always need to be  ( info / error / valid).  eg showNotification("valid", "Logged with success", 3000) ↓↓
 function showNotification(type, message, duration = 5000) {
-  //show notification
   const notifElem = document.createElement("div");
   notifElem.className = "notification";
   if (type === "info") {
@@ -257,7 +217,7 @@ function showNotification(type, message, duration = 5000) {
     
     <p>${message}</p>
     `);
-  } else if (type === "valide") {
+  } else if (type === "valid") {
     notifElem.innerHTML = DOMPurify.sanitize(`
     
       <img src="../app/assets/validLogo.png" class="stateLogo"
@@ -281,36 +241,59 @@ function showNotification(type, message, duration = 5000) {
     }, duration);
   }
 }
-
+async function checkUsedWallet(wallet) {
+  const docRef = collection(db, "users");
+  const q = query(docRef, where("wallet", "==", wallet));
+  const qResult = await getDocs(q);
+  console.log(qResult.size);
+  if (qResult.size > 0) {
+    console.log("true");
+    return true;
+  } else {
+    console.log("false");
+    return false;
+  }
+}
 function setWalletPage() {
   activePage = "setWalletPage";
-  document.getElementById("submitPlayerInfo").addEventListener("click", () => {
-    const walletInput = document.getElementById("playerWallet").value;
-    const nameInput = document.getElementById("playerName").value;
-    //---
-    try {
-      updateProfile(user, { displayName: nameInput });
-      registerInDB(walletInput, nameInput);
-      localStorage.setItem("displayName", nameInput);
-      infoSubmit = true;
-      localStorage.setItem("infoSubmit", infoSubmit);
-      document.getElementById("submitPlayerInfo").style.backgroundColor =
-        "#00c377";
-      setTimeout(homeLogged, 800);
-    } catch (error) {
-      console.log(error);
-    }
-  });
+  document
+    .getElementById("submitPlayerInfo")
+    .addEventListener("click", async () => {
+      const walletInput = document.getElementById("playerWallet").value;
+      const nameInput = document.getElementById("playerName").value;
+      let isWalletUsed = await checkUsedWallet(walletInput);
+      if (isWalletUsed === true) {
+        showNotification(
+          "error",
+          "Wallet already registered with another account",
+          5000
+        );
+        return;
+      }
+      try {
+        updateProfile(user, { displayName: nameInput });
+        registerInDB(walletInput, nameInput);
+        localStorage.setItem("displayName", nameInput);
+        infoSubmit = true;
+        localStorage.setItem("infoSubmit", infoSubmit);
+        document.getElementById("submitPlayerInfo").style.backgroundColor =
+          "#00c377";
+        setTimeout(homeLogged, 800);
+      } catch (error) {
+        console.error(error);
+      }
+    });
 }
+
 function homePage() {
-  const openDocBtn = document.getElementById("docButton");
-  const signButton = document.getElementById("signButton");
-  document.getElementById("loadingOverlay").style.display = "none";
-  document.getElementById("buttonList").style.display = "flex";
   activePage = "homePage";
-  const bouton1 = document.getElementById("button1");
-  const content1 = document.getElementById("buttonList");
-  const bouton2 = document.getElementById("button2");
+  const openDocBtn = document.getElementById("docButton");
+  document.getElementById("loadingOverlay").style.display = "none";
+  document.getElementById("dynamicContent").style.display = "flex";
+  const buttonPricePage = document.getElementById("buttonPricePage");
+  const content1 = document.getElementById("dynamicContent");
+  const buttonDM = document.getElementById("buttonDM");
+
   if (openDocBtn) {
     openDocBtn.addEventListener(
       "click",
@@ -324,13 +307,13 @@ function homePage() {
     );
   }
   if (localStorage.getItem("logged") == "false") {
-    if (document.getElementById("button3")) {
-      document.getElementById("button3").addEventListener("click", () => {
-        document.getElementById("button3").remove();
+    if (document.getElementById("buttonSignOut")) {
+      document.getElementById("buttonSignOut").addEventListener("click", () => {
+        document.getElementById("buttonSignOut").remove();
       });
     }
 
-    document.getElementById("signButton").addEventListener(
+    document.getElementById("buttonSignIn").addEventListener(
       "click",
       () => {
         content1.style.opacity = 0;
@@ -350,10 +333,10 @@ function homePage() {
       { once: true }
     );
   }
-  bouton2.addEventListener("click", () => {
+  buttonDM.addEventListener("click", () => {
     checkIfLogged((isLoggedIn) => {
       if (isLoggedIn) {
-        let launchLoad = buttonLoadingAnim(bouton2);
+        buttonLoadingAnim(buttonDM);
         (async function () {
           const uid = localStorage.getItem("uid");
           let docRef = doc(db, "users", uid);
@@ -390,11 +373,10 @@ function homePage() {
       } else {
         showNotification("error", "You need to Log-in First.", 3000);
       }
-      return;
     });
   });
 
-  bouton1.addEventListener("click", () => {
+  buttonPricePage.addEventListener("click", () => {
     checkIfLogged((isLoggedIn) => {
       if (isLoggedIn) {
         content1.style.opacity = 0;
@@ -419,7 +401,7 @@ function homePage() {
   });
   if (logged) {
     setTimeout(() => {
-      document.getElementById("button3").addEventListener("click", () => {
+      document.getElementById("buttonSignOut").addEventListener("click", () => {
         signOut(auth);
         homeNotLog();
         logged = false;
@@ -431,11 +413,10 @@ function homePage() {
   }
 }
 
-// Fonction pour afficher la page de prix
 function pricePage() {
   activePage = "pricePage";
-  bouton0 = document.getElementById("button0");
-  content0 = document.getElementById("buttonList");
+  buttonBack = document.getElementById("buttonBack");
+  content0 = document.getElementById("dynamicContent");
   const cocoButton = document.getElementById("tradeCoco");
   const nanaButton = document.getElementById("tradeNana");
   const birdeyeKey = localStorage.getItem("apiKey");
@@ -461,7 +442,7 @@ function pricePage() {
         (async function testApiKey() {
           try {
             let inputKey = document.getElementById("apiKey").value;
-            let testKey = await cocoPriceTest(inputKey);
+            let testKey = await checkAPI(inputKey);
             if (testKey != null) {
               const key = document.getElementById("apiKey").value;
               const encryptedData = CryptoJS.AES.encrypt(
@@ -474,13 +455,13 @@ function pricePage() {
               cocoPrice();
               solanaPrice();
               nanaPrice();
-              showNotification("valide", "Your Key is valid", 2000);
+              showNotification("valid", "Your Key is valid", 2000);
             } else {
               showNotification("error", "Error : Wrong ApiKey.", 5000);
               document.getElementById("apiKey").value = "";
             }
           } catch (error) {
-            console.log(error);
+            console.error(error);
           }
         })();
       });
@@ -501,15 +482,14 @@ function pricePage() {
   backButton();
 }
 
-// Fonction pour afficher la page de messages privés
 function privateMessagePage() {
   activePage = "privateMessagePage";
-  bouton0 = document.getElementById("button0");
-  content0 = document.getElementById("buttonList");
+  buttonBack = document.getElementById("buttonBack");
+  content0 = document.getElementById("dynamicContent");
   backButton();
   document.getElementById("buttonCreate").addEventListener("click", () => {
     activePage = "sendInvitePage";
-    content0 = document.getElementById("buttonList");
+    content0 = document.getElementById("dynamicContent");
     content0.style.opacity = 0;
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "../../public/sendInvite.html", true);
@@ -528,7 +508,7 @@ function privateMessagePage() {
   });
   document.getElementById("buttonInvitation").addEventListener("click", () => {
     activePage = "invitationPage";
-    content0 = document.getElementById("buttonList");
+    content0 = document.getElementById("dynamicContent");
     content0.style.opacity = 0;
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "../../public/invitationPage.html", true);
@@ -549,7 +529,7 @@ function privateMessagePage() {
     .getElementById("buttonManageChanel")
     .addEventListener("click", () => {
       activePage = "manageChanelPage";
-      content0 = document.getElementById("buttonList");
+      content0 = document.getElementById("dynamicContent");
       content0.style.opacity = 0;
       const xhr = new XMLHttpRequest();
       xhr.open("GET", "../../public/manageChanel.html", true);
@@ -568,15 +548,26 @@ function privateMessagePage() {
     });
 }
 
-// Fonction pour afficher la page de connexion/inscription
 function signPage() {
   activePage = "signPage";
   backButton();
-  let signinButton = document.getElementById("signinButton");
-  let loginButton = document.getElementById("loginButton");
+  let SigninButton = document.getElementById("SigninButton");
+  let LoginButton = document.getElementById("LoginButton");
   let emailPath = document.getElementById("email");
   let passwordPath = document.getElementById("password");
-  loginButton.addEventListener("click", () => {
+  LoginButton.addEventListener("click", () => {
+    buttonLoadingAnim(LoginButton);
+    setTimeout(() => {
+      const disabledLoginButton = document.getElementById(
+        "disabledLoginButton"
+      );
+      disabledLoginButton.className = "button";
+      disabledLoginButton.textContent = "login";
+      disabledLoginButton.style.margin = "10px";
+      disabledLoginButton.style.color = "#313131";
+      disabledLoginButton.style.backgroundColor = "#e2e8c0";
+      disabledLoginButton.id = "LoginButton";
+    }, 5000);
     email = emailPath.value;
     password = passwordPath.value;
     user = auth.currentUser;
@@ -591,56 +582,41 @@ function signPage() {
 
         if (user) {
           if (user.emailVerified !== true) {
-            document.getElementById("errorContainer").innerHTML =
-              DOMPurify.sanitize(`
-            <p id="errorMessage" class="errorMessage" style="color:#f02d3d">Email is not verified yet</p>
-            <button id="emailVerifButton" class="button" style="cursor: pointer">Resend Email ?</button>`);
-            document.getElementById("emailVerifButton").addEventListener(
+            showNotification("error", "Email not Verified", 3000);
+            const errorContainer = document.getElementById("errorContainer");
+            const newElem = document.createElement("button");
+            newElem.id = "EmailVerifButton";
+            newElem.className = "button";
+            newElem.style.cursor = "pointer";
+            newElem.textContent = "Resend Email";
+            if (!document.getElementById("EmailVerifButton")) {
+              errorContainer.appendChild(newElem);
+            }
+            const EmailVerifButton =
+              document.getElementById("EmailVerifButton");
+            EmailVerifButton.addEventListener(
               "click",
               () => {
-                if (cooldown && cooldown > 0) {
-                  document.getElementById(
-                    "emailVerifButton"
-                  ).style.backgroundColor = "#f02d3d";
-                }
-                if (!cooldown || cooldown == 0) {
-                  cooldown = 61;
-                  function updateCooldown() {
-                    if (activePage === "signPage") {
-                      if (!document.getElementById("cooldown")) {
-                        const cooldownPath =
-                          document.getElementById("errorContainer");
-                        const cooldownElem = document.createElement("div");
-                        cooldownElem.id = "cooldown";
-                        cooldownPath.appendChild(cooldownElem);
-                      }
-                    }
-                    const cooldownElement = document.getElementById("cooldown");
-                    if (cooldown === 0) {
-                      clearInterval(cooldownInterval);
-                    } else {
-                      cooldown--;
-                      if (cooldownElement) {
-                        cooldownElement.textContent = cooldown;
-                      }
-                    }
-                  }
-
-                  updateCooldown();
-                  const cooldownInterval = setInterval(updateCooldown, 1000);
-                  document.getElementById(
-                    "emailVerifButton"
-                  ).style.backgroundColor = "#00c377";
-                  sendEmailVerification(user);
-                }
+                sendEmailVerification(user);
+                console.log("clicked");
+                buttonLoadingAnim(EmailVerifButton);
+                setTimeout(() => {
+                  const disabledEmailVerifButton = document.getElementById(
+                    "disabledEmailVerifButton"
+                  );
+                  disabledEmailVerifButton.className = "button";
+                  disabledEmailVerifButton.textContent = "signin";
+                  disabledEmailVerifButton.style.color = "#313131";
+                  disabledEmailVerifButton.style.backgroundColor = "#e2e8c0";
+                  disabledEmailVerifButton.id = "Send email";
+                }, 60000);
               },
               { once: true }
             );
-
             signOut(auth);
           } else {
             logged = true;
-            showNotification("valide", "Logged successfully.", 5000);
+            showNotification("valid", "Logged successfully.", 5000);
             localStorage.setItem("logged", logged);
             async function setUid() {
               const userRefCheck = doc(db, "users", user.uid);
@@ -660,64 +636,71 @@ function signPage() {
             });
           }
         }
-        // ...
       })
+
       .catch((error) => {
-        console.log(error);
-        document.getElementById("errorMessage").style.color = "#f02d3d";
         const errorCode = error.code;
         const errorMessage = error.message;
         if (errorCode.includes("invalid-email")) {
-          showNotification("error", "Error : Invalid Email.", 5000);
+          showNotification("error", "Error : Invalid Email.", 3000);
         }
         if (errorMessage.includes("invalid-login-credentials")) {
-          showNotification("error", "Error : Wrong Email/Password.", 5000);
+          showNotification("error", "Error : Wrong Email/Password.", 3000);
         }
         if (errorMessage.includes("auth/missing-password")) {
-          showNotification("error", "Error : Missing Password.", 5000);
+          showNotification("error", "Error : Missing Password.", 3000);
         }
       });
   });
 
-  signinButton.addEventListener(
+  SigninButton.addEventListener(
     "click",
     () => {
+      buttonLoadingAnim(SigninButton);
       email = emailPath.value;
       password = passwordPath.value;
       createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-          // Signed up
           const user = userCredential.user;
           sendEmailVerification(auth.currentUser).then(() => {
-            document.getElementById("errorMessage").style.color = "#00c377";
-            document.getElementById("errorMessage").textContent =
-              "please verify your email";
-            // Email verification sent!
-            // ...
-            // verifyEmail();
+            const disabledSigninButton = document.getElementById(
+              "disabledSigninButton"
+            );
+            disabledSigninButton.className = "button";
+            disabledSigninButton.textContent = "signin";
+            disabledSigninButton.style.color = "#313131";
+            disabledSigninButton.style.backgroundColor = "#e2e8c0";
+            disabledSigninButton.id = "SigninButton";
+            showNotification("info", "Check your mail for verification", 5000);
           });
         })
         .catch((error) => {
+          const disabledSigninButton = document.getElementById(
+            "disabledSigninButton"
+          );
+          disabledSigninButton.className = "button";
+          disabledSigninButton.textContent = "signin";
+          disabledSigninButton.style.color = "#313131";
+          disabledSigninButton.style.backgroundColor = "#e2e8c0";
+          disabledSigninButton.id = "SigninButton";
           const errorCode = error.code;
           const errorMessage = error.message;
-          document.getElementById("errorMessage").style.color = "#f02d3d";
           if (errorMessage.includes("auth/missing-password")) {
-            showNotification("error", "Error : Missing Password.", 5000);
+            showNotification("error", "Error : Missing Password.", 3000);
           }
           if (errorCode.includes("invalid-email")) {
-            showNotification("error", "Error : Invalid Email.", 5000);
+            showNotification("error", "Error : Invalid Email.", 3000);
           }
           if (errorCode.includes("auth/weak-password")) {
-            showNotification("error", "Error : Password is too weak.", 5000);
+            showNotification("error", "Error : Password is too weak.", 3000);
           }
           if (errorCode.includes("email-already-in-use")) {
             showNotification(
               "error",
               "Error : Email already registered.",
-              5000
+              3000
             );
           }
-          // ..
         });
     },
     { once: true }
@@ -762,11 +745,11 @@ function solanaPrice() {
       }
     })
     .catch((error) => {
-      console.log(error);
+      console.error(error);
     });
 }
 
-function cocoPriceTest(key) {
+function checkAPI(key) {
   const option = {
     method: "GET",
     headers: { "x-chain": "solana", "x-API-KEY": key },
@@ -785,7 +768,6 @@ function cocoPriceTest(key) {
     })
     .catch((error) => {
       console.error(error);
-      // Vous pourriez choisir de retourner quelque chose ici en cas d'erreur.
     });
 }
 function cocoPrice() {
@@ -828,7 +810,7 @@ function cocoPrice() {
       }
     })
     .catch((error) => {
-      console.log(error);
+      console.error(error);
     });
 }
 function nanaPrice() {
@@ -905,14 +887,15 @@ function nanaPrice() {
       }
     })
     .catch((error) => {
-      console.log(error);
+      console.error(error);
     });
 }
-// Start private message page function
+//  ↓↓ Start private message page function ↓↓
 async function initSendInvitation() {
   const walletAdress = document.getElementById("walletAdress").value;
 
   if (!walletAdress) {
+    showNotification("error", "You need to enter a valid adress", 3000);
     return;
   }
   const docRef = collection(db, "users");
@@ -938,24 +921,20 @@ async function initSendInvitation() {
     });
     return result.data.status;
   } catch (error) {
-    console.log(error);
-    return;
+    console.error(error);
   }
 }
 function sendInvite() {
   backButton();
   document.getElementById("sendInvite").addEventListener("click", () => {
-    //sendFunction();
     const bouton = document.getElementById("sendInvite");
-    let launchLoad = buttonLoadingAnim(bouton);
+    buttonLoadingAnim(bouton);
     initSendInvitation().then((result1) => {
       if (result1 === "sent") {
-        showNotification("valide", "Invitation sent successfully.", 5000);
+        showNotification("valid", "Invitation sent successfully.", 5000);
         bouton.style.color = "#313131";
-        bouton.textContent = "Invitation Sent !";
         bouton.style.backgroundColor = "#00c377";
         setTimeout(() => {
-          bouton.textContent = "send the invite";
           bouton.className = "button";
           bouton.style.backgroundColor = "#e2e8c0";
           bouton.id = "sendInvite";
@@ -964,10 +943,8 @@ function sendInvite() {
       } else if (result1 === "already exist") {
         showNotification("error", "Error : Session already Exist.", 5000);
         bouton.style.color = "#313131";
-        bouton.textContent = "session already exist with player";
         bouton.style.backgroundColor = "#f45b69";
         setTimeout(() => {
-          bouton.textContent = "send the invite";
           bouton.className = "button";
           bouton.style.backgroundColor = "#e2e8c0";
           bouton.id = "sendInvite";
@@ -975,7 +952,6 @@ function sendInvite() {
       } else {
         setTimeout(() => {
           bouton.style.color = "#313131";
-          bouton.textContent = "send the invite";
           bouton.className = "button";
           bouton.style.backgroundColor = "#e2e8c0";
           bouton.id = "sendInvite";
@@ -984,6 +960,7 @@ function sendInvite() {
     });
   });
 }
+
 async function initAcceptInvitation(sessionId1) {
   try {
     const result = await acceptInvitation({
@@ -991,10 +968,10 @@ async function initAcceptInvitation(sessionId1) {
     });
     return result.data.status;
   } catch (error) {
-    console.log(error);
-    return;
+    console.error(error);
   }
 }
+
 async function getInvitation() {
   backButton();
   const listPath = document.getElementById("invitationList");
@@ -1008,19 +985,16 @@ async function getInvitation() {
 
   const qResult = await getDocs(q);
   const sessionId = [];
-  const sendBy = [];
   const players = [];
   try {
     qResult.forEach((doc) => {
       sessionId.push(doc.id);
-      sendBy.push(doc.data().sendBy);
       players.push(doc.data().player1);
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
   for (let i = 0; i < players.length; i++) {
-    const sendBy1 = sendBy[i];
     const sessionId1 = sessionId[i];
     const player1 = players[i];
     const createLi = document.createElement("li");
@@ -1039,9 +1013,12 @@ async function getInvitation() {
       .getElementById("create" + sessionId1)
       .addEventListener("click", () => {
         let result = initAcceptInvitation(sessionId1).then((result) => {
-          console.log(result);
+          if (result != "accepted") {
+            showNotification("error", "Error while accept request", 3000);
+          } else {
+            document.getElementById(stringId).remove();
+          }
         });
-        document.getElementById(stringId).remove();
       });
     document
       .getElementById("delete" + sessionId1)
@@ -1051,6 +1028,7 @@ async function getInvitation() {
       });
   }
 }
+
 async function manageChanel() {
   backButton();
   const docRef = collection(db, "privateMessage");
@@ -1114,7 +1092,7 @@ async function manageChanel() {
           closeButton.removeEventListener("click", handleDelete);
           document.getElementById(docIdN1).remove();
           showNotification(
-            "valide",
+            "valid",
             "chanel with <" + player + ">has been closed",
             3000
           );
@@ -1170,12 +1148,12 @@ async function manageChanel() {
       }
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
+
 async function activeChanel(docId, playerName) {
   activePage = "chatingPage";
-  const ulPath = document.getElementById("messageUl");
   const sendButton = document.getElementById("sendButton");
   const inputField = document.getElementById("messageInput");
   setTimeout(() => listenNewMessage(docId), 2000);
@@ -1198,6 +1176,7 @@ async function activeChanel(docId, playerName) {
     inputField.value = "";
   });
 }
+
 async function initSendMessage(docId) {
   const offButton = document.getElementById("offButton");
   const input = document.getElementById("messageInput");
@@ -1213,7 +1192,7 @@ async function initSendMessage(docId) {
       message: input.value,
       sessionId: docId,
     });
-    showNotification("valide", result.data.status, 2000);
+    showNotification("valid", result.data.status, 2000);
     reloadMessage(docId);
     offButton.id = "sendButton";
     offButton.style.cursor = "pointer";
@@ -1222,9 +1201,10 @@ async function initSendMessage(docId) {
     input.value = "";
     return result.data.status;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
+
 async function listenNewMessage(docId) {
   try {
     const snap = onSnapshot(
@@ -1236,9 +1216,10 @@ async function listenNewMessage(docId) {
       }
     );
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
+
 async function getMessage(docId) {
   const ulPath = document.getElementById("messageUl");
   const currentChanel = docId;
@@ -1273,6 +1254,7 @@ async function getMessage(docId) {
     }
   });
 }
+
 async function reloadMessage(docId) {
   const ulPath = document.getElementById("messageUl");
   const currentChanel = docId;
@@ -1307,18 +1289,18 @@ async function reloadMessage(docId) {
     }
   });
 }
-
 // End private message page function
-function buttonLoadingAnim(bouton) {
-  const bouton1 = bouton;
-  bouton1.style.backgroundColor = "#444444";
-  bouton1.style.color = "#888888";
-  bouton1.textContent = "Pending...";
-  bouton1.className = "button99";
-  bouton1.id = "bouton99";
+
+function buttonLoadingAnim(button) {
+  const idName = button.id;
+  const disabledButton = button;
+  disabledButton.style.backgroundColor = "#444444";
+  disabledButton.style.color = "#888888";
+  disabledButton.textContent = "Pending...";
+  disabledButton.className = "button99";
+  disabledButton.id = "disabled" + idName;
 }
 
-// Ajoutez ici les écouteurs d'événements et le code qui doit s'exécuter au chargement de la page
 document.addEventListener("DOMContentLoaded", () => {
   const authStateChangeCallback = (user) => {
     if (user) {
@@ -1338,20 +1320,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       homeNotLog();
     }
-
-    // Une fois que le premier changement est détecté, supprimez l'écouteur
-    // pour qu'il ne soit plus appelé par la suite.
     unsubscribeAuthStateChange();
   };
-
-  // Ajoutez l'écouteur onAuthStateChanged
   const unsubscribeAuthStateChange = onAuthStateChanged(
     auth,
     authStateChangeCallback
   );
 
   activePage = "homePage";
-  let signButton = document.getElementById("signButton");
   let manifest = chrome.runtime.getManifest();
   let storedVersion = localStorage.getItem("AppVersion");
   let version = manifest.version;
@@ -1360,6 +1336,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   if (storedVersion != version) {
     showNotification("info", "App have been updated.", 5000);
+    localStorage.setItem("AppVersion", version);
   }
   document.getElementById("version").textContent = "V " + version;
 });

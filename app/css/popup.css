@@ -94,7 +94,7 @@ input {
   text-align: center;
   border-color: #282828;
 }
-.buttonList {
+.dynamicContent {
   height: 90%;
   display: flex;
   flex-direction: column;

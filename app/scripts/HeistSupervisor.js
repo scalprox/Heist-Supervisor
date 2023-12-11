@@ -1,60 +1,28 @@
-/*
-- Locations Stats     ok
-- Max Withdraw Amount     OK
-- Chance Per Ticket Raffle    OK
-- Actual Best Location    Pending
-- Add Live Price For COCO and NANA    Pendin
-- * AUTO SEND AND CLAIM BOT*   Pending
-- Private Chat session ?
-
-*/
-let classGangMenu;
-let classInGangTribe;
 let withdrawBtnPath;
-let gangData;
-let newData;
-let data;
+let xhrGangData;
+let xhrNotificationData;
 let getMoneyId;
-let withdrawClick = false;
 let getMoneyIdLoc;
-let withdrawLoc;
-let checkValue = 0;
-let maxAmountLoc;
-let cocoMax;
-let nanaMax;
-let chimpPercentage;
-let tangPercentage;
-let newLiStat;
-let updateLiStats;
 let newLiChimp;
-let updateLiChimp;
 let newLiTang;
-let updateLiTang;
-let getUl;
-let CocoTabsList;
+let newLiStat;
 let CocoTabsClicked = false;
-let CocoEmissionsLoc;
-
-let ChimpDoc;
-let TangLoc;
-let cocoDistribution;
-let spaceHTML;
-let buttonMax;
-let getNanaTotal;
-let getCocoTotal;
-let cleanedCoco;
-let cleanedNana;
 let Amount;
-let yesCoco = false;
-let yesNana = false;
-let interval1;
+let isCocoSelected = false;
+let isNanaSelected = false;
 let inHub = false;
 let roundRaffle1;
 let roundRaffle2;
 let hubHtml = false;
-let locCheck = false;
-let clientWalletAdress;
-let walletToInvite;
+const walletAddressRegex =
+  /https:\/\/api\.theheist\.game\/nft\/robbers\/wallet-top-performing\/([\w]+)/;
+
+const locTarget = document.querySelector(
+  "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.Dialog_scrollPaper__BgbbA.css-ekeie0 > div > div"
+);
+const targetElement = document.querySelector(
+  "body > div.MuiDialog-root.location_root__6XsDH.MuiModal-root.css-126xj0f"
+);
 
 function searchPlaceholder(query) {
   const elements = document.querySelectorAll(
@@ -67,8 +35,9 @@ function searchPlaceholder(query) {
   }
   return null;
 }
+
+//  ↓↓ auto search element in DOM to prevent path update issue ↓↓
 function searchElement(query) {
-  // auto search element in DOM to prevent class update issue
   const element = document.querySelectorAll("button, h3, h2, h1, span, div");
   for (let elem of element) {
     if (elem.textContent.trim() === query) {
@@ -79,7 +48,6 @@ function searchElement(query) {
 }
 initFunction2();
 function initFunction2() {
-  //gang
   let intervalGang = setInterval(() => {
     let gangButton = searchElement("Gangs");
     if (gangButton) {
@@ -88,7 +56,7 @@ function initFunction2() {
       gangMenu(gangButton);
     }
   }, 50);
-  //location
+
   let intervalLocation = setInterval(() => {
     let cityPath = searchElement("City");
     let hub = searchElement("Hub");
@@ -102,7 +70,7 @@ function initFunction2() {
       }
     } catch (error) {}
   }, 50);
-  //chat
+
   let intervalChat = setInterval(() => {
     let chatPath = searchElement("Heist Chat");
     if (chatPath) {
@@ -115,14 +83,12 @@ function initFunction2() {
             mutation.attributeName === "class"
           ) {
             const currentClasses = elementToObserve.className;
-            const includeUndefined = currentClasses.includes("undefined");
             if (!currentClasses.includes("undefined")) {
               sendInviteInGame();
             }
           }
         }
       });
-
       const observerConfig = {
         attributes: true,
         attributeFilter: ["class"],
@@ -130,7 +96,7 @@ function initFunction2() {
       observer.observe(elementToObserve, observerConfig);
     }
   }, 50);
-  //notif
+
   let intervalNotif = setInterval(() => {
     let notifPath = searchElement("The heist game");
     if (notifPath) {
@@ -141,20 +107,11 @@ function initFunction2() {
   }, 50);
 }
 
-const walletAddressRegex =
-  /https:\/\/api\.theheist\.game\/nft\/robbers\/wallet-top-performing\/([\w]+)/;
-
-const locTarget = document.querySelector(
-  "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.Dialog_scrollPaper__BgbbA.css-ekeie0 > div > div"
-);
-const targetElement = document.querySelector(
-  "body > div.MuiDialog-root.location_root__6XsDH.MuiModal-root.css-126xj0f"
-);
-
+//  ↓↓ add chat request button in profile when you click on someone profile ↓↓
 function addInviteButtonInProfile() {
   window.addEventListener("getAdress", function (event) {
     if (event.detail) {
-      clientWalletAdress = event.detail;
+      const clientWalletAdress = event.detail;
       const tradeQuerry = searchElement("TRADE");
       const injectButtonPath = tradeQuerry.parentElement;
       const nameClass = tradeQuerry.className;
@@ -178,7 +135,8 @@ function addInviteButtonInProfile() {
     }
   });
 }
-//get client wallet adress for chating in the Heist Supervisor APP
+
+// ↓↓  get client wallet adress for chating in the Heist Supervisor Popup ↓↓
 function sendInviteInGame() {
   const elem1 = document.getElementById("chat-history-bottom-position");
   const profilePath =
@@ -196,64 +154,79 @@ function sendInviteInGame() {
     );
   }
 }
+
 function maxWithdraw() {
-  getCocoTotal = withdrawBtnPath.children[0].children[2].children[1];
-  getNanaTotal = withdrawBtnPath.children[0].children[0].children[1];
-  //withdraw tab
-  const elem1 = searchElement("Available:");
-  withdrawLoc = elem1.parentElement.parentElement.firstElementChild;
+  // ↓↓ withdraw tab path ↓↓
+  let interval = setInterval(() => {
+    const getCocoTotal = withdrawBtnPath.children[0].children[2].children[1];
+    const getNanaTotal = withdrawBtnPath.children[0].children[0].children[1];
+    const elem1 = searchElement("Amount:");
+    if (elem1) {
+      clearInterval(interval);
+      let withdrawLoc = elem1.parentElement.parentElement;
+      withdrawLoc.addEventListener(
+        "click",
+        () => {
+          setTimeout(maxWithdraw, 200);
+          return;
+        },
+        { once: true }
+      );
+      setTimeout(() => {
+        //  ↓↓ getMoneyIdLoc check if nana or coco is selected in withdraw menu ↓↓
+        getMoneyIdLoc =
+          elem1.parentElement.children[2].firstElementChild.firstElementChild;
+        getMoneyId = getMoneyIdLoc.getAttribute("aria-label");
+      }, 100);
+      if (getCocoTotal) {
+        let arialLabelCoco = getCocoTotal.getAttribute("aria-label");
+        let numberMatchCoco = arialLabelCoco.match(/([\d,]+)/);
 
-  setTimeout(() => {
-    //getMoneyIdLoc check if nana or coco is selected in withdraw menu
-    getMoneyIdLoc = elem1.firstElementChild.firstElementChild;
-    getMoneyId = getMoneyIdLoc.getAttribute("aria-label");
+        if (numberMatchCoco) {
+          Amount = numberMatchCoco[1];
+        }
+      }
+      if (getNanaTotal) {
+        let arialLabelNana = getNanaTotal.getAttribute("aria-label");
+        let numberMatchNana = arialLabelNana.match(/([\d,]+)/);
+
+        if (numberMatchNana) {
+          Amount = numberMatchNana[1];
+        }
+      }
+
+      setTimeout(() => {
+        if (getMoneyId.includes("COCO")) {
+          isCocoSelected = true;
+          const match = getMoneyId.match(/(\d|,)+/);
+          const matchAmount = match[0];
+          let cleanedCoco = matchAmount.replace(/,/g, ".");
+          Amount = cleanedCoco;
+          getMoneyIdLoc.textContent = Amount;
+        }
+        if (getMoneyId.includes("NANA")) {
+          isNanaSelected = true;
+          const match = getMoneyId.match(/(\d|,)+/);
+          const matchAmount = match[0];
+          let cleanedNana = matchAmount.replace(/,/g, ".");
+          Amount = cleanedNana;
+          getMoneyIdLoc.textContent = Amount;
+        }
+      }, 200);
+    }
   }, 100);
-
-  if (getCocoTotal) {
-    let arialLabelCoco = getCocoTotal.getAttribute("aria-label");
-    let numberMatchCoco = arialLabelCoco.match(/([\d,]+)/);
-
-    if (numberMatchCoco) {
-      let Amount = numberMatchCoco[1];
-    }
-  }
-  if (getNanaTotal) {
-    let arialLabelNana = getNanaTotal.getAttribute("aria-label");
-    let numberMatchNana = arialLabelNana.match(/([\d,]+)/);
-
-    if (numberMatchNana) {
-      let Amount = numberMatchNana[1];
-      //cleanedNana = Amount.replace(/,/g, "");
-    }
-  }
-
-  setTimeout(() => {
-    if (getMoneyId.includes("COCO")) {
-      yesCoco = true;
-      const match = getMoneyId.match(/(\d|,)+/);
-      const matchAmount = match[0];
-      cleanedCoco = matchAmount.replace(/,/g, ".");
-      Amount = cleanedCoco;
-    }
-    if (getMoneyId.includes("NANA")) {
-      yesNana = true;
-      const match = getMoneyId.match(/(\d|,)+/);
-      const matchAmount = match[0];
-      cleanedNana = matchAmount.replace(/,/g, ".");
-      Amount = cleanedNana;
-    }
-  }, 150);
 }
 
 function LocationStats() {
   if (inHub === true) {
-    updateLiStats = document.querySelector("#STATS");
-    updateLiChimp = document.querySelector("#percentChimp");
-    updateLiTang = document.querySelector("#percentTang");
-    // path to to the top list of location ( safe House, federal reserve....) in the location menu
+    const updateLiStats = document.querySelector("#STATS");
+    const updateLiChimp = document.querySelector("#percentChimp");
+    const updateLiTang = document.querySelector("#percentTang");
+
+    //   ↓↓ path to to the top list of location ( safe House, federal reserve....) in the location menu ↓↓
     const elem1 = searchElement("Event table");
     try {
-      CocoTabsList =
+      const CocoTabsList =
         elem1.parentElement.parentElement.parentElement.parentElement
           .children[0].children[0].children[0].children[0];
 
@@ -273,15 +246,15 @@ function LocationStats() {
           }
         });
       }
-      // path to the location ul container
+      //  ↓↓ path to the location ul container ↓↓
       const locQuerry = searchElement("Location Stats");
-      getUl = locQuerry.parentElement.parentElement.children[2];
-      //path to coco emission value
-      CocoEmissionsLoc = getUl.children[3].children[1];
-      //path to number of Tang value
-      TangLoc = getUl.children[1].children[1];
-      //path to number of Chimp value
-      ChimpDoc = getUl.children[0].children[1];
+      const getUl = locQuerry.parentElement.parentElement.children[2];
+      //  ↓↓ path to coco emission value ↓↓
+      const CocoEmissionsLoc = getUl.children[3].children[1];
+      //  ↓↓ path to number of Tang value ↓↓
+      const TangLoc = getUl.children[1].children[1];
+      //  ↓↓ path to number of Chimp value ↓↓
+      const ChimpDoc = getUl.children[0].children[1];
       const nameClassValue = ChimpDoc.className;
       const nameClassLabel = getUl.children[0].children[2].className;
       if (ChimpDoc) {
@@ -292,10 +265,9 @@ function LocationStats() {
         let Tang = parseInt(Tangtxt);
         let Chimp = parseInt(Chimptxt);
 
-        tangPercentage = Math.round((Tang / (Tang + Chimp)) * 100);
-        chimpPercentage = Math.round((Chimp / (Tang + Chimp)) * 100);
-
-        cocoDistribution = Math.floor(Coco / (Tang + Chimp));
+        const tangPercentage = Math.round((Tang / (Tang + Chimp)) * 100);
+        const chimpPercentage = Math.round((Chimp / (Tang + Chimp)) * 100);
+        const cocoDistribution = Math.floor(Coco / (Tang + Chimp));
 
         if (updateLiTang) {
           updateLiTang.innerHTML = `
@@ -338,7 +310,7 @@ function LocationStats() {
 
       `;
         } else {
-          newLiStat = document.createElement("li");
+          const newLiStat = document.createElement("li");
           newLiStat.className = "_asideListItem_13mm0_67";
           newLiStat.id = "STATS";
           newLiStat.innerHTML = `
@@ -353,40 +325,16 @@ function LocationStats() {
           getUl.appendChild(newLiChimp);
           getUl.appendChild(newLiTang);
         }
-        // getUl.innerHTML += newLiStat;
-
         CocoTabsClicked = false;
       }
     } catch (error) {}
   }
 }
 
-function WithdrawValue() {
-  withdrawClick = true;
-  maxWithdraw();
-  if (yesCoco === true) {
-    getMoneyIdLoc.textContent = Amount;
-    yesCoco = false;
-  }
-  if (yesNana === true) {
-    getMoneyIdLoc.textContent = Amount;
-    yesNana = false;
-  }
-  //detect if there is a click in withdraw menu for reload maxWithdraw()
-  withdrawLoc.addEventListener("click", () => {
-    if (withdrawClick === true) {
-      maxWithdraw();
-    }
-  });
-}
-
 function startObservingHub() {
   const elementToObserve = document.querySelector("#root");
-  // Créez une instance de MutationObserver
   const observer = new MutationObserver((mutationsList, observer) => {
-    // Parcourez toutes les mutations détectées
     for (const mutation of mutationsList) {
-      // Vérifiez si l'attribut aria-hidden est défini sur "true" dans l'élément
       if (
         mutation.type === "attributes" &&
         mutation.attributeName === "aria-hidden"
@@ -405,7 +353,6 @@ function startObservingHub() {
             }
             if (checkHub) {
               clearInterval(interval);
-
               let interval1 = setInterval(() => {
                 const elem1 = searchElement("ORANGUTANS COMING");
                 if (elem1) {
@@ -434,16 +381,12 @@ function startObservingHub() {
       }
     }
   });
-
-  // Configurez l'observateur pour surveiller les changements de l'attribut aria-hidden
   const observerConfig = { attributes: true, attributeFilter: ["aria-hidden"] };
-
-  // Commencez à observer l'élément
   observer.observe(elementToObserve, observerConfig);
 }
 
 function startObservingWithdraw() {
-  // location of the withdraw / deposit Tab
+  //   ↓↓ location of the withdraw / deposit Tab ↓↓
   const elem1 = searchElement("Gangs");
   const elem2 = elem1.parentElement;
   const elem3 = elem2.children[1];
@@ -457,25 +400,20 @@ function startObservingWithdraw() {
         mutation.attributeName === "class"
       ) {
         const currentClasses = elementToObserve.className;
-        const containsProfileHidden = currentClasses.includes("_button--black");
-        if (!containsProfileHidden) {
-          // La classe a été ajoutée
+        const containsButtonBlack = currentClasses.includes("_button--black");
+        if (!containsButtonBlack) {
           withdrawClick = false;
-          clearInterval(interval1);
         } else {
-          interval1 = setInterval(WithdrawValue, 300);
+          maxWithdraw();
         }
       }
     });
   };
-
-  // Créez une instance de MutationObserver avec la fonction de rappel
   const observer = new MutationObserver(observerCallback);
-
-  // Configurez l'observateur pour surveiller les changements d'attributs (classes)
   const observerConfig = { attributes: true, attributeFilter: ["class"] };
   observer.observe(elementToObserve, observerConfig);
 }
+
 function nftRecruitment() {
   let chancePerTicket;
   const container = document.querySelector(
@@ -516,23 +454,24 @@ function nftRecruitment() {
     );
   }
 }
+
 function raffleTicket() {
   if (inHub === true) {
-    //path of the raffel1 raffle2 ( all the tab)
+    //  ↓↓ path of the raffel1 raffle2 ( all the tab) ↓↓
     const elem1 = searchElement("ORANGUTANS COMING");
     const elem2 =
       elem1.parentElement.parentElement.parentElement.children[1].children[1]
         .children[1].children[1].firstElementChild;
+
     const tab1 = elem2.children[0];
     const tab2 = elem2.children[1];
-    //append elem
     const raffleLoc1 = tab1.children[0].children[0];
     const raffleLoc2 = tab2.children[0].children[0];
-    // path where total item in the raffle
+    //  ↓↓path where total item in the raffle  ↓↓
     const qtyRaffle1 = raffleLoc1.children[1];
     const qtyRaffle2 = raffleLoc2.children[1];
     const nameClass = qtyRaffle1.className;
-    //path where total ticket purchased by all players
+    //  ↓↓ path where total ticket purchased by all players ↓↓
     const qtyTicket1 =
       tab1.children[0].children[3].children[0].children[0].children[1];
     const qtyTicket2 =
@@ -573,18 +512,8 @@ function raffleTicket() {
     }
   }
 }
-function betterVault() {
-  let vaultLoc = document.querySelector(
-    "body > div.MuiDialog-root.MuiModal-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.Dialog_scrollPaper__BgbbA.css-ekeie0 > div > div.VaultContent_vault__8aZfl.socialHub_tabContent__PfGbX > div.Nfts_main__EjuLa > div > div"
-  );
-  if (vaultLoc) {
-    vaultLoc.style.position = "relatives";
-    vaultLoc.style.left = "-100px";
-  }
-}
 
 function notifSound() {
-  let firstLauch = true;
   let event = new CustomEvent("notification");
   const elem1 = searchElement("The heist game");
   const notifCounter = elem1.parentElement.children[0].children[1];
@@ -592,7 +521,10 @@ function notifSound() {
 
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      if (mutation.type === "childList" || mutation.type === "characterData") {
+      if (
+        mutation.type === "childList" ||
+        mutation.type === "characterxhrNotificationData"
+      ) {
         notif = parseFloat(notifCounter.textContent);
         if (notif > 0) {
           window.dispatchEvent(event);
@@ -600,9 +532,11 @@ function notifSound() {
       }
     });
   });
-
-  const config = { childList: true, characterData: true, subtree: true };
-
+  const config = {
+    childList: true,
+    characterxhrNotificationData: true,
+    subtree: true,
+  };
   observer.observe(notifCounter, config);
 }
 
@@ -616,14 +550,14 @@ function notifTracker() {
       if (realXHR.readyState == 4 && realXHR.status == 200) {
         const gangUrlRegex = /https:\/\/api\.theheist\.game\/gang\/\d+$/;
         if (gangUrlRegex.test(realXHR.responseURL)) {
-          gangData = JSON.parse(realXHR.responseText);
+          xhrGangData = JSON.parse(realXHR.responseText);
         }
         if (
           realXHR.responseURL.includes(
             "https://api.theheist.game/notification/history?offset=0&limit=10"
           )
         ) {
-          data = JSON.parse(realXHR.responseText);
+          xhrNotificationData = JSON.parse(realXHR.responseText);
         }
         if (
           realXHR.responseURL.includes(
@@ -660,6 +594,7 @@ function notifTracker() {
   const observerConfig = { attributes: true, attributeFilter: ["class"] };
   observer.observe(elementToObserve, observerConfig);
 }
+
 function openNotifProfile() {
   const notifListPath = document.querySelector(
     "#notification-scroller > div > div"
@@ -667,15 +602,16 @@ function openNotifProfile() {
   for (let i = 0; i < notifListPath.length; i++) {
     let item = notifListPath[i];
     item.addEventListener("click", () => {
-      let wallet = data[i].walletId;
-      searchPlayer(wallet, data[i].wallet.username);
+      let wallet = xhrNotificationData[i].walletId;
+      searchPlayer(wallet, xhrNotificationData[i].wallet.username);
     });
   }
 }
+
 function addNewNotif(newNotif) {
-  let notifIndex = Object.keys(data).length;
+  let notifIndex = Object.keys(xhrNotificationData).length;
   newNotif.forEach((item, index) => {
-    data[notifIndex + index] = item;
+    xhrNotificationData[notifIndex + index] = item;
   });
 }
 
@@ -714,19 +650,20 @@ function searchPlayer(walletAdress, playerName) {
     }
   }, 30);
 }
+
 function howManyLeftClass(element) {
   const classes = element.className.split(" ");
   const motif = /_left/;
-  let compte = 0;
+  let count = 0;
 
   classes.forEach((classe) => {
     if (motif.test(classe)) {
-      compte++;
+      count++;
     }
   });
-
-  return compte;
+  return count;
 }
+
 function gangMenu(path) {
   const gangBtn = path;
 
@@ -735,7 +672,7 @@ function gangMenu(path) {
       "click",
       () => {
         let interval = setInterval(() => {
-          //retrieve element to observe ( left gang tab)
+          // ↓↓ retrieve element to observe ( left gang tab) ↓↓
           let elementToObserve;
           const child = document.getElementById("gang-scroller");
           const membersPath = searchElement("MEMBERS");
@@ -803,7 +740,7 @@ function gangMenu(path) {
     );
   }
 }
-// ne detecte plsu la <div></div>
+
 function getGangPlayer(parent, closeBtn) {
   let interval = setInterval(() => {
     const child1 = parent.children[0].children[0];
@@ -819,11 +756,11 @@ function getGangPlayer(parent, closeBtn) {
       for (let i = 0; i < playerPath.children.length; i++) {
         playerPath.children[i].style.cursor = "pointer";
         membershipsIndex = i;
-        if (gangData.memberships[i].status === "Left") {
+        if (xhrGangData.memberships[i].status === "Left") {
           membershipsIndex++;
         }
         let item = playerPath.children[i];
-        let member = gangData.memberships[membershipsIndex];
+        let member = xhrGangData.memberships[membershipsIndex];
 
         item.addEventListener("click", () => {
           let playerName = member.wallet.username;
@@ -831,12 +768,11 @@ function getGangPlayer(parent, closeBtn) {
 
           openProfileFromGang(playerName, wallet, closeBtn);
         });
-
-        // ajouter la fonction recherche de l'user
       }
     }
   }, 300);
 }
+
 function openProfileFromGang(username, wallet, closeBtn) {
   let interval1 = setInterval(() => {
     if (closeBtn) {
@@ -886,50 +822,3 @@ function openProfileFromGang(username, wallet, closeBtn) {
     }
   }, 30);
 }
-//     see admin panel
-/*
-function test() {
-  (function (originalXHR) {
-    function newXHR() {
-      const xhr = new originalXHR();
-
-      xhr.realSend = xhr.send;
-      xhr.send = function () {
-        xhr.realOnreadystatechange = xhr.onreadystatechange;
-        xhr.onreadystatechange = function () {
-          if (xhr.readyState == 4 && xhr.status == 200) {
-            // Intercepter la réponse ici
-            if (
-              xhr.responseURL.includes("https://api.theheist.game/gang/170")
-            ) {
-              var response = JSON.parse(xhr.responseText);
-              response.myMembership.isLeader = true;
-              response.memberships[4].isLeader = true;
-              console.log("applied");
-              Object.defineProperty(xhr, "responseText", {
-                value: JSON.stringify(response),
-              });
-            }
-            if (xhr.responseURL.includes("https://api.theheist.game/auth/me")) {
-              var response = JSON.parse(xhr.responseText);
-              if (response.id) {
-                response.isAdmin = true; // Modifier la propriété
-                Object.defineProperty(xhr, "responseText", {
-                  value: JSON.stringify(response),
-                });
-              }
-            }
-          }
-          if (xhr.realOnreadystatechange)
-            xhr.realOnreadystatechange.apply(this, arguments);
-        };
-        xhr.realSend.apply(this, arguments);
-      };
-
-      return xhr;
-    }
-
-    window.XMLHttpRequest = newXHR;
-  })(window.XMLHttpRequest);
-}
-test();*/

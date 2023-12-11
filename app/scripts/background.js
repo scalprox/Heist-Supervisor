@@ -3,9 +3,9 @@ let alreadyOpen = false;
 chrome.storage.local.get(["adress"], function (result) {
   currentAdress = result;
 });
-
 const walletAddressRegex =
   /https:\/\/api\.theheist\.game\/nft\/robbers\/wallet-top-performing\/([\w]+)/;
+
 chrome.webRequest.onCompleted.addListener(
   (details) => {
     const match = details.url.match(walletAddressRegex);
@@ -23,6 +23,7 @@ chrome.webRequest.onCompleted.addListener(
   },
   { urls: ["*://*.theheist.game/*"] }
 );
+
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.action === "openNotifHTML") {
     if (!alreadyOpen) {
@@ -37,6 +38,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         alreadyOpen = false;
       }, 1000);
     }
+
     chrome.runtime.onMessage.addListener(
       function (message, sender, sendResponse) {
         if (message.type === "walletAdress") {

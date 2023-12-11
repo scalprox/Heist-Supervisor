@@ -1,24 +1,24 @@
 let notif = new Audio(chrome.runtime.getURL("app/assets/notif.mp3"));
 const csp = "script-src 'self'; object-src 'self'";
 let check = false;
-// Créez une balise <meta> pour injecter la CSP dans la page
 const meta = document.createElement("meta");
 meta.httpEquiv = "Content-Security-Policy";
 meta.content = csp;
+
+// get wallet retrieved wallet adress from service worker and send it to HeistSupervisor.js
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.type === "dataFromBackground") {
-    // Transmettez la donnée au script injecté
     let event = new CustomEvent("getAdress", { detail: message.adress });
     window.dispatchEvent(event);
   }
 });
+
+// ask service worker to open invitationPage and transmit wallet adress to invit
 window.addEventListener(
   "message",
   function (event) {
     if (event.source != window) return;
-
     if (event.data.type && event.data.type == "openInvitePopup") {
-      console.log("received loader");
       chrome.runtime.sendMessage({ action: "openNotifHTML" });
       let dataFromLocalStorage = localStorage.getItem("adressToInvite");
       if (dataFromLocalStorage) {
@@ -33,13 +33,15 @@ window.addEventListener(
   },
   false
 );
+
+// if an ingame notification appear ( trade request / ambush / capture...) play a notification sound
 window.addEventListener("notification", function (event) {
   setTimeout(() => {
     notif.play();
   }, 600);
 });
 
-// Ajoutez la balise <meta> au head de la page
+// inject HeistSupervisor script
 let interval = setInterval(() => {
   const head = document.querySelector("head");
   if (head) {
@@ -54,6 +56,7 @@ let interval = setInterval(() => {
   }
 }, 20);
 
+// change scroll bar style in game
 const style = document.createElement("style");
 style.textContent = `
 ::-webkit-scrollbar {

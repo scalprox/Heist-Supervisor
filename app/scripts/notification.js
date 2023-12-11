@@ -11,16 +11,18 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     send();
   }
 });
-function buttonLoadingAnim(bouton) {
-  const bouton1 = bouton;
-  bouton1.style.backgroundColor = "#444444";
-  bouton1.style.color = "#888888";
-  bouton1.textContent = "Pending...";
-  bouton1.className = "button99";
-  bouton1.id = "bouton99";
+
+function buttonLoadingAnim(button) {
+  const idName = button.id;
+  const disabledButton = button;
+  disabledButton.style.backgroundColor = "#444444";
+  disabledButton.style.color = "#888888";
+  disabledButton.textContent = "Pending...";
+  disabledButton.className = "button99";
+  disabledButton.id = "disabled" + idName;
 }
+
 function showNotification(type, message, duration = 5000) {
-  //show notification
   const notifElem = document.createElement("div");
   notifElem.className = "notification";
   if (type === "error") {
@@ -38,6 +40,7 @@ function showNotification(type, message, duration = 5000) {
       <p>${message}</p>
       `;
   }
+
   const container = document.getElementById("notifContent");
   container.appendChild(notifElem);
   setTimeout(() => {
@@ -54,6 +57,7 @@ function showNotification(type, message, duration = 5000) {
     }, duration);
   }
 }
+
 async function initSend(invitedUsername, invitedUid) {
   const username = localStorage.getItem("username");
   try {
@@ -69,6 +73,7 @@ async function initSend(invitedUsername, invitedUid) {
     return;
   }
 }
+
 async function send() {
   const docRef = collection(db, "users");
   console.log("second");
@@ -79,20 +84,20 @@ async function send() {
   if (qResult.size === 0) {
     showNotification("error", "Error : un-registered Adress.", 2500);
     setTimeout(() => {
-        window.close();
-      }, 3000);
+      window.close();
+    }, 3000);
   } else {
     qResult.forEach((doc) => {
       const uid = doc.data().uid;
       const username = doc.data().username;
-      const path = document.getElementById("buttonList");
+      const path = document.getElementById("dynamicContent");
       path.innerHTML = `
     <h2>Comfirm send invite to ${username}.</h2>
-    <button class="button" id="sendInvite">send invite</button>
+    <button class="button" id="SendInvite">send invite</button>
     `;
-      const buttonSend = document.getElementById("sendInvite");
+      const buttonSend = document.getElementById("SendInvite");
       buttonSend.addEventListener("click", () => {
-        const loadButton = buttonLoadingAnim(buttonSend);
+        buttonLoadingAnim(buttonSend);
         initSend(username, uid).then((result) => {
           if (result === "sent") {
             showNotification("valide", "Invitation sent successfully.", 2500);
