@@ -163,6 +163,18 @@ function maxWithdraw() {
     const elem1 = searchElement("Amount:");
     if (elem1) {
       clearInterval(interval);
+      const placeHolder = elem1.firstElementChild.firstElementChild;
+      const depositButtonPath = elem1.parentElement.children[5];
+      const divParent = elem1.parentElement;
+      const buttonClass = depositButtonPath.classList;
+      if (depositButtonPath && !document.getElementById("maxButton")) {
+        const maxButton = document.createElement("button");
+        maxButton.classList = buttonClass;
+        maxButton.id = "maxButton";
+        maxButton.textContent = "Max Amount";
+        maxButton.style.marginBottom = "10px";
+        divParent.insertBefore(maxButton, depositButtonPath);
+      }
       let withdrawLoc = elem1.parentElement.parentElement;
       withdrawLoc.addEventListener(
         "click",
@@ -196,6 +208,14 @@ function maxWithdraw() {
       }
 
       setTimeout(() => {
+        document.getElementById("maxButton").addEventListener("click", () => {
+          let inputEvent = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype,
+            "value"
+          );
+          inputEvent.set.call(placeHolder, Amount.replace(/\./g, ""));
+          placeHolder.dispatchEvent(new Event("input", { bubbles: true }));
+        });
         if (getMoneyId.includes("COCO")) {
           isCocoSelected = true;
           const match = getMoneyId.match(/(\d|,)+/);
