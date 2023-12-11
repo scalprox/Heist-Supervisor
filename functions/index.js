@@ -1,30 +1,17 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-
 admin.initializeApp();
-/**
- * Échappe les caractères spéciaux dans une chaîne pour
- * prévenir des attaques XSS.
- * @param {string} unsafe - La chaîne à échapper.
- * @return {string} La chaîne échappée.
- */
+
 function escapeHtml(unsafe) {
   return unsafe
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
-/**
- * Vérifie si un message est valide en s'assurant qu'il ne
- * contient que des caractères autorisés.
- * @param {string} msg - Le message à vérifier.
- * @return {boolean} Vrai si le message est valide, faux sinon.
- */
 function isValidMessage(msg) {
   return /^[a-zA-Z0-9\s.,'!?éè]*$/u.test(msg);
 }
 exports.sendInvitation = functions.https.onCall((data, context) => {
-  // Vérifier si l'utilisateur est authentifié
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated");
   }
@@ -73,7 +60,6 @@ exports.sendInvitation = functions.https.onCall((data, context) => {
       return { status: "already exist" };
     }
   });
-  // Sauvegarder le message dans Firestore
 });
 
 exports.acceptInvitation = functions.https.onCall((data, context) => {
