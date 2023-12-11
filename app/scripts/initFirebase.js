@@ -3,7 +3,7 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCG0zGyABlsi6tH9YJrK24Iy1CEJN6NM-s",
+  apiKey: "************************",
   authDomain: "heist-supervisor.firebaseapp.com",
   projectId: "heist-supervisor",
   storageBucket: "heist-supervisor.appspot.com",
