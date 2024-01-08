@@ -38,17 +38,47 @@ html.is-animating .transition-fade {
   opacity: 0;
 }
 body {
-  background-color: #313131;
+  border: 1px solid white;
+  display: flex;
+  margin: 0px;
+  flex-direction: column;
   font-family: Arial, sans-serif;
   padding: 20px;
   width: 340px;
   overflow-y: auto;
   height: 520px;
+  background: hsla(212, 13%, 41%, 1);
+
+  background: linear-gradient(
+    270deg,
+    hsla(212, 13%, 41%, 1) 0%,
+    hsla(3, 100%, 73%, 1) 100%
+  );
+
+  background: -moz-linear-gradient(
+    270deg,
+    hsla(212, 13%, 41%, 1) 0%,
+    hsla(3, 100%, 73%, 1) 100%
+  );
+
+  background: -webkit-linear-gradient(
+    270deg,
+    hsla(212, 13%, 41%, 1) 0%,
+    hsla(3, 100%, 73%, 1) 100%
+  );
+
+  filter: progid: DXImageTransform.Microsoft.gradient( startColorstr="#5A6776", endColorstr="#FF7B74", GradientType=1 );
 }
 header {
   display: flex;
   align-items: center;
   margin-bottom: 5px;
+}
+main,
+#home {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
 }
 .headerElem {
   display: flex;
@@ -95,7 +125,7 @@ input {
   border-color: #282828;
 }
 .dynamicContent {
-  height: 90%;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   text-align: center;
@@ -149,7 +179,7 @@ input {
   font-size: 15px;
   color: white;
 }
-.priceTable {
+.dynamicTable {
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.4);
   background-color: #282828;
   border-radius: 4px;
@@ -161,6 +191,7 @@ input {
   max-height: 350px;
   overflow: auto;
   font-size: small;
+  position: relative;
 }
 .buttonBack {
   background-color: #e2e8c0;
@@ -340,11 +371,48 @@ ul {
   display: flex;
 }
 .loading-overlay {
-  position: fixed;
+  box-sizing: border-box;
+  border: 1px solid white;
+  position: absolute;
+  margin: 0px;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: hsla(212, 13%, 41%, 1);
+
+  background: linear-gradient(
+    270deg,
+    hsla(212, 13%, 41%, 1) 0%,
+    hsla(3, 100%, 73%, 1) 100%
+  );
+
+  background: -moz-linear-gradient(
+    270deg,
+    hsla(212, 13%, 41%, 1) 0%,
+    hsla(3, 100%, 73%, 1) 100%
+  );
+
+  background: -webkit-linear-gradient(
+    270deg,
+    hsla(212, 13%, 41%, 1) 0%,
+    hsla(3, 100%, 73%, 1) 100%
+  );
+
+  filter: progid: DXImageTransform.Microsoft.gradient( startColorstr="#5A6776", endColorstr="#FF7B74", GradientType=1 );
+}
+
+.loading-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: #313131;
   z-index: 500;
   display: flex;
@@ -354,7 +422,7 @@ ul {
 }
 .loader {
   position: relative;
-  margin: 60px auto;
+  margin: auto;
   width: 50px;
   height: 50px;
   z-index: 999;
@@ -402,4 +470,93 @@ ul {
     stroke-dasharray: 89, 200;
     stroke-dashoffset: -124px;
   }
+}
+.editElement {
+  display: flex;
+  flex-direction: column;
+  font-family: monospace, sans-serif;
+  font-size: 18px;
+  font-weight: bold;
+  color: whitesmoke;
+}
+.miscOptionsLi {
+  display: flex;
+  cursor: default;
+}
+.miscOptionsTitle {
+  font-weight: 800;
+  color: whitesmoke;
+  margin-right: auto;
+  list-style: none;
+}
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px; /* Réduire la largeur */
+  height: 22px; /* Réduire la hauteur */
+}
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  margin: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #f45b69;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+  border-radius: 22px; /* Ajuster pour correspondre à la hauteur */
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px; /* Réduire la hauteur du curseur */
+  width: 18px; /* Réduire la largeur du curseur */
+  left: 2px; /* Ajuster la position gauche */
+  bottom: 2px; /* Ajuster la position basse */
+  background-color: white;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #00c377;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196f3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(18px);
+  -ms-transform: translateX(18px);
+  transform: translateX(18px);
+}
+.slider.round {
+  border-radius: 22pxpx;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.toolTip {
+  font-size: medium;
+  position: fixed;
+  background-color: white;
+  color: black;
+  padding: 5px;
+  border-radius: 5px;
+  pointer-events: none;
+  width: 200px;
+  z-index: 1000;
 }

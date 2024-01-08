@@ -58,10 +58,11 @@ const uid = localStorage.getItem("uid");
 function registerInDB(walletInput, nameInput) {
   const uid = localStorage.getItem("uid");
   const documentRef = doc(db, "users", uid);
-  let data = {
-    wallet: walletInput,
-    username: nameInput,
-  };
+  let data = {};
+
+  if (typeof walletInput !== "undefined") data.wallet = walletInput;
+  if (typeof nameInput !== "undefined") data.username = nameInput;
+
   updateDoc(documentRef, data);
 }
 
@@ -107,6 +108,7 @@ function homeLogged() {
   };
   xhr.send();
   setTimeout(homePage, 300);
+  user = auth.currentUser;
 }
 
 function homeNotLog() {
@@ -131,6 +133,7 @@ function backButton() {
   buttonBack = document.getElementById("buttonBack");
   content0 = document.getElementById("dynamicContent");
   if (
+    activePage === "editUserDataPage " ||
     activePage === "sendInvitePage" ||
     activePage === "manageChanelPage" ||
     activePage === "invitationPage"
@@ -241,6 +244,7 @@ function showNotification(type, message, duration = 5000) {
     }, duration);
   }
 }
+
 async function checkUsedWallet(wallet) {
   const docRef = collection(db, "users");
   const q = query(docRef, where("wallet", "==", wallet));
@@ -288,12 +292,12 @@ function setWalletPage() {
 function homePage() {
   activePage = "homePage";
   const openDocBtn = document.getElementById("docButton");
-  document.getElementById("loadingOverlay").style.display = "none";
+  document.getElementById("loadingOverlayHome").style.display = "none";
   document.getElementById("dynamicContent").style.display = "flex";
   const buttonPricePage = document.getElementById("buttonPricePage");
   const content1 = document.getElementById("dynamicContent");
   const buttonDM = document.getElementById("buttonDM");
-
+  const editUserDataBtn = document.getElementById("editUserDataButton");
   if (openDocBtn) {
     openDocBtn.addEventListener(
       "click",
@@ -333,6 +337,25 @@ function homePage() {
       { once: true }
     );
   }
+  document.getElementById("inGameMiscButton").addEventListener(
+    "click",
+    () => {
+      content1.style.opacity = 0;
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", "../../public/miscOptions.html", true);
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          setTimeout(() => {
+            content1.innerHTML = DOMPurify.sanitize(xhr.responseText);
+            content1.style.opacity = 1;
+          }, 200);
+        }
+      };
+      xhr.send();
+      setTimeout(inGameMiscOptions, 400);
+    },
+    { once: true }
+  );
   buttonDM.addEventListener("click", () => {
     checkIfLogged((isLoggedIn) => {
       if (isLoggedIn) {
@@ -375,6 +398,29 @@ function homePage() {
       }
     });
   });
+  editUserDataBtn.addEventListener("click", () => {
+    checkIfLogged((isLoggedIn) => {
+      if (isLoggedIn) {
+        content1.style.opacity = 0;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", "../../public/updateUserData.html", true);
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4 && xhr.status === 200) {
+            setTimeout(() => {
+              content1.innerHTML = DOMPurify.sanitize(xhr.responseText);
+              content1.style.opacity = 1;
+            }, 200);
+          }
+        };
+        xhr.send();
+        setTimeout(editUserDataPage, 300);
+      } else {
+        showNotification("error", "You need to Log-in First.", 3000);
+        return;
+      }
+    });
+  });
 
   buttonPricePage.addEventListener("click", () => {
     checkIfLogged((isLoggedIn) => {
@@ -413,6 +459,83 @@ function homePage() {
   }
 }
 
+function filterString(string) {
+  if (string.length > 10) {
+    return string.substring(0, 5) + "..." + string.substring(string.length - 5);
+  }
+  return string;
+}
+
+function inGameMiscOptions() {
+  backButton();
+  const switches = document.querySelectorAll(".switch input");
+  const ul = document.getElementById("miscOptionUl");
+  const toolTip1 = document.getElementById("toolTip1");
+  const toolTip2 = document.getElementById("toolTip2");
+  toolTip1.previousElementSibling.addEventListener("mousemove", (e) => {
+    toolTip1.style.display = "block";
+    toolTip1.style.left = e.clientX - 100 + "px";
+    toolTip1.style.top = e.clientY - toolTip1.clientHeight - 10 + "px";
+  });
+  toolTip2.previousElementSibling.addEventListener("mousemove", (e) => {
+    toolTip2.style.display = "block";
+    toolTip2.style.left = e.clientX - 100 + "px";
+    toolTip2.style.top = e.clientY - toolTip2.clientHeight - 10 + "px";
+  });
+  toolTip1.previousElementSibling.addEventListener("mouseout", () => {
+    toolTip1.style.display = "none";
+  });
+  toolTip2.previousElementSibling.addEventListener("mouseout", () => {
+    toolTip2.style.display = "none";
+  });
+  chrome.storage.sync.get(null, function (data) {
+    switches.forEach((switchElem, index) => {
+      switchElem.checked = data["switchState" + index] || false;
+    });
+  });
+
+  switches.forEach((switchElem) => {
+    switchElem.addEventListener("change", function () {
+      let states = {};
+      switches.forEach((sw, idx) => {
+        states["switchState" + idx] = sw.checked;
+      });
+      chrome.storage.sync.set(states, function () {
+        console.log(states);
+      });
+    });
+  });
+}
+
+async function editUserDataPage() {
+  activePage = "editUserDataPage";
+  backButton();
+  try {
+    const docRef = doc(db, "users", user.uid);
+    const snap = await getDoc(docRef);
+    const actualWallet = document.getElementById("walletText");
+    if (snap.data()) {
+      const walletAdress = filterString(snap.data().wallet);
+      actualWallet.textContent = walletAdress;
+    }
+    const submitDataBtn = document.getElementById("submitDataBtn");
+
+    submitDataBtn.addEventListener("click", () => {
+      const walletInput = document.getElementById("playerWallet").value;
+      if (walletInput) {
+        //update wallet
+        registerInDB(walletInput, undefined);
+        showNotification("info", "Wallet adress updated", 3000);
+        document.getElementById("buttonBack").click();
+      } else {
+        showNotification("error", "Error : Empty field.", 3000);
+      }
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 function pricePage() {
   activePage = "pricePage";
   buttonBack = document.getElementById("buttonBack");
@@ -421,9 +544,39 @@ function pricePage() {
   const nanaButton = document.getElementById("tradeNana");
   const birdeyeKey = localStorage.getItem("apiKey");
   if (birdeyeKey) {
-    cocoPrice();
-    solanaPrice();
-    nanaPrice();
+    (async () => {
+      let elementsLoaded = 0;
+      const parent = document.getElementById("loadingOverlayPrice");
+      const newChild = document.createElement("p");
+      newChild.textContent = elementsLoaded + "/3";
+      newChild.id = "elementsLoaded";
+      newChild.style.color = "#e2e8c0";
+      newChild.style.fontFamily = "Bangers";
+      parent.appendChild(newChild);
+      const coco = await cocoPrice();
+      if (coco) {
+        elementsLoaded++;
+        document.getElementById("elementsLoaded").textContent =
+          elementsLoaded + "/3";
+      }
+      const sol = await solanaPrice();
+      if (sol) {
+        elementsLoaded++;
+        document.getElementById("elementsLoaded").textContent =
+          elementsLoaded + "/3";
+      }
+      const nana = await nanaPrice();
+      if (nana) {
+        elementsLoaded++;
+        document.getElementById("elementsLoaded").textContent =
+          elementsLoaded + "/3";
+      }
+
+      if (coco && sol && nana) {
+        document.getElementById("loadingOverlayPrice").style.display = "none";
+        document.getElementById("dynamicContent").style.display = "flex";
+      }
+    })();
   } else {
     const path = document.getElementById("priceContain");
     const form = document.createElement("form");
@@ -457,7 +610,7 @@ function pricePage() {
               nanaPrice();
               showNotification("valid", "Your Key is valid", 2000);
             } else {
-              showNotification("error", "Error : Wrong ApiKey.", 5000);
+              showNotification("error", "Error : Wrong ApiKey.", 3000);
               document.getElementById("apiKey").value = "";
             }
           } catch (error) {
@@ -561,12 +714,14 @@ function signPage() {
       const disabledLoginButton = document.getElementById(
         "disabledLoginButton"
       );
-      disabledLoginButton.className = "button";
-      disabledLoginButton.textContent = "login";
-      disabledLoginButton.style.margin = "10px";
-      disabledLoginButton.style.color = "#313131";
-      disabledLoginButton.style.backgroundColor = "#e2e8c0";
-      disabledLoginButton.id = "LoginButton";
+      if (disabledLoginButton) {
+        disabledLoginButton.className = "button";
+        disabledLoginButton.textContent = "login";
+        disabledLoginButton.style.margin = "10px";
+        disabledLoginButton.style.color = "#313131";
+        disabledLoginButton.style.backgroundColor = "#e2e8c0";
+        disabledLoginButton.id = "LoginButton";
+      }
     }, 5000);
     email = emailPath.value;
     password = passwordPath.value;
@@ -616,7 +771,7 @@ function signPage() {
             signOut(auth);
           } else {
             logged = true;
-            showNotification("valid", "Logged successfully.", 5000);
+            showNotification("valid", "Logged successfully.", 3000);
             localStorage.setItem("logged", logged);
             async function setUid() {
               const userRefCheck = doc(db, "users", user.uid);
@@ -661,7 +816,6 @@ function signPage() {
       password = passwordPath.value;
       createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-          const user = userCredential.user;
           sendEmailVerification(auth.currentUser).then(() => {
             const disabledSigninButton = document.getElementById(
               "disabledSigninButton"
@@ -671,7 +825,7 @@ function signPage() {
             disabledSigninButton.style.color = "#313131";
             disabledSigninButton.style.backgroundColor = "#e2e8c0";
             disabledSigninButton.id = "SigninButton";
-            showNotification("info", "Check your mail for verification", 5000);
+            showNotification("info", "Check your mail for verification", 3000);
           });
         })
         .catch((error) => {
@@ -707,46 +861,56 @@ function signPage() {
   );
 }
 
-function solanaPrice() {
-  const birdeyeKey = CryptoJS.AES.decrypt(
-    localStorage.getItem("apiKey"),
-    localStorage.getItem("uid")
-  ).toString(CryptoJS.enc.Utf8);
-  const option = {
-    method: "GET",
-    headers: { "x-chain": "solana", "x-API-KEY": birdeyeKey },
-  };
-  fetch(
-    "https://public-api.birdeye.so/public/multi_price?list_address=So11111111111111111111111111111111111111112",
-    option
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      let solanaChange =
-        data.data.So11111111111111111111111111111111111111112.priceChange24h;
-      let solana = data.data.So11111111111111111111111111111111111111112.value;
-      let cleanedSolChange = parseFloat(solanaChange).toFixed(2);
-      let cleanedSolana = parseFloat(solana).toFixed(3);
-      let injectSol = document.getElementById("solPrice");
-      const spanElem = document.createElement("span");
-      const imgElem = document.createElement("img");
-      imgElem.src = "../app/assets/solLogo.png";
-      imgElem.classList.add("logo");
-      spanElem.appendChild(imgElem);
-      const textContent = document.createTextNode(
-        ` $SOL = ${cleanedSolana} (USD) ${cleanedSolChange}%`
-      );
-      injectSol.appendChild(spanElem);
-      injectSol.appendChild(textContent);
-      if (cleanedSolChange <= 0) {
-        injectSol.style.color = "#f45b69";
-      } else {
-        injectSol.style.color = "#00c377";
-      }
-    })
-    .catch((error) => {
-      console.error(error);
-    });
+async function solanaPrice() {
+  try {
+    const birdeyeKey = CryptoJS.AES.decrypt(
+      localStorage.getItem("apiKey"),
+      localStorage.getItem("uid")
+    ).toString(CryptoJS.enc.Utf8);
+    const option = {
+      method: "GET",
+      headers: { "x-chain": "solana", "x-API-KEY": birdeyeKey },
+    };
+
+    const response = await fetch(
+      "https://public-api.birdeye.so/public/multi_price?list_address=So11111111111111111111111111111111111111112",
+      option
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    let solanaChange =
+      data.data["So11111111111111111111111111111111111111112"].priceChange24h;
+    let cleanedSolChange = parseFloat(solanaChange).toFixed(2);
+    let solana = data.data["So11111111111111111111111111111111111111112"].value;
+    let cleanedSolana = parseFloat(solana).toFixed(6);
+
+    let injectSol = document.getElementById("solPrice");
+    injectSol.innerHTML = "";
+    const spanElem = document.createElement("span");
+    const imgElem = document.createElement("img");
+    imgElem.src = "../app/assets/solLogo.png";
+    imgElem.classList.add("logo");
+    spanElem.appendChild(imgElem);
+    const textContent = document.createTextNode(
+      ` $SOL = ${cleanedSolana} (USD) ${cleanedSolChange}%`
+    );
+    injectSol.appendChild(spanElem);
+    injectSol.appendChild(textContent);
+
+    if (cleanedSolChange <= 0) {
+      injectSol.style.color = "#f45b69";
+    } else {
+      injectSol.style.color = "#00c377";
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error fetching the solana price:", error);
+    return false;
+  }
 }
 
 function checkAPI(key) {
@@ -770,125 +934,108 @@ function checkAPI(key) {
       console.error(error);
     });
 }
-function cocoPrice() {
-  const birdeyeKey = CryptoJS.AES.decrypt(
-    localStorage.getItem("apiKey"),
-    localStorage.getItem("uid")
-  ).toString(CryptoJS.enc.Utf8);
-  const option = {
-    method: "GET",
-    headers: { "x-chain": "solana", "x-API-KEY": birdeyeKey },
-  };
-  fetch(
-    "https://public-api.birdeye.so/public/multi_price?list_address=74DSHnK1qqr4z1pXjLjPAVi8XFngZ635jEVpdkJtnizQ",
-    option
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      let cocoChange =
-        data.data["74DSHnK1qqr4z1pXjLjPAVi8XFngZ635jEVpdkJtnizQ"]
-          .priceChange24h;
-      let cleanedCocoChange = parseFloat(cocoChange).toFixed(2);
-      let coco =
-        data.data["74DSHnK1qqr4z1pXjLjPAVi8XFngZ635jEVpdkJtnizQ"].value;
-      cleanedCoco = parseFloat(coco).toFixed(6);
-      let injectCoco = document.getElementById("cocoPrice");
-      const spanElem = document.createElement("span");
-      const imgElem = document.createElement("img");
-      imgElem.src = "../app/assets/cocoLogo.png";
-      imgElem.classList.add("logo");
-      spanElem.appendChild(imgElem);
-      const textContent = document.createTextNode(
-        ` $COCO = ${cleanedCoco} (USD) ${cleanedCocoChange}%`
-      );
-      injectCoco.appendChild(spanElem);
-      injectCoco.appendChild(textContent);
-      if (cleanedCocoChange <= 0) {
-        injectCoco.style.color = "#f45b69";
-      } else {
-        injectCoco.style.color = "#00c377";
-      }
-    })
-    .catch((error) => {
-      console.error(error);
-    });
-}
-function nanaPrice() {
-  const birdeyeKey = CryptoJS.AES.decrypt(
-    localStorage.getItem("apiKey"),
-    localStorage.getItem("uid")
-  ).toString(CryptoJS.enc.Utf8);
-  let handled = false;
-  const option = {
-    method: "GET",
-    headers: { "x-chain": "solana", "x-API-KEY": birdeyeKey },
-  };
-  fetch(
-    "https://public-api.birdeye.so/public/multi_price?list_address=HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr",
-    option
-  )
-    .then((response) => {
-      if (!response.ok) {
-        if (response.status === 401 && !handled) {
-          showNotification("error", "Error : Wrong ApiKey.", 5000);
-          const path = document.getElementById("priceContain");
-          const form = document.createElement("form");
-          form.id = "apiKeyForm";
-          form.innerHTML = DOMPurify.sanitize(`
-      <label for="apiKey">
-        <input type="text" id="apiKey" required aria-invalid="true" placeholder="Insert Your Birdeye Api Key"/>
-        </label>
-        <button id="submitApiKey" class="button">Submit Api Key</button>
-        `);
-          path.appendChild(form);
-          document.getElementById("submitApiKey").addEventListener(
-            "click",
-            (event) => {
-              event.preventDefault();
-              const key = document.getElementById("apiKey").value;
-              localStorage.setItem("apiKey", key);
-              const child = document.getElementById("apiKeyForm");
-              path.removeChild(child);
-              nanaPrice();
-              cocoPrice();
-              solanaPrice();
-            },
-            { once: true }
-          );
-          handled = true;
-          return;
-        }
+async function cocoPrice() {
+  try {
+    const birdeyeKey = CryptoJS.AES.decrypt(
+      localStorage.getItem("apiKey"),
+      localStorage.getItem("uid")
+    ).toString(CryptoJS.enc.Utf8);
+    const option = {
+      method: "GET",
+      headers: { "x-chain": "solana", "x-API-KEY": birdeyeKey },
+    };
 
-        throw new Error("Erreur lors de la requête");
-      }
-      return response.json();
-    })
-    .then((data) => {
-      let nanaChange =
-        data.data.HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr.priceChange24h;
-      let cleanedNanaChange = parseFloat(nanaChange).toFixed(2);
-      let nana = data.data.HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr.value;
-      cleanedNana = parseFloat(nana).toFixed(6);
-      let injectNana = document.getElementById("nanaPrice");
-      const spanElem = document.createElement("span");
-      const imgElem = document.createElement("img");
-      imgElem.src = "../app/assets/nanaLogo.png";
-      imgElem.classList.add("logo");
-      spanElem.appendChild(imgElem);
-      const textContent = document.createTextNode(
-        ` $NANA = ${cleanedNana} (USD) ${cleanedNanaChange}%`
-      );
-      injectNana.appendChild(spanElem);
-      injectNana.appendChild(textContent);
-      if (cleanedNanaChange <= 0) {
-        injectNana.style.color = "#f45b69";
-      } else {
-        injectNana.style.color = "#00c377";
-      }
-    })
-    .catch((error) => {
-      console.error(error);
-    });
+    const response = await fetch(
+      "https://public-api.birdeye.so/public/multi_price?list_address=74DSHnK1qqr4z1pXjLjPAVi8XFngZ635jEVpdkJtnizQ",
+      option
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    let cocoChange =
+      data.data["74DSHnK1qqr4z1pXjLjPAVi8XFngZ635jEVpdkJtnizQ"].priceChange24h;
+    let cleanedCocoChange = parseFloat(cocoChange).toFixed(2);
+    let coco = data.data["74DSHnK1qqr4z1pXjLjPAVi8XFngZ635jEVpdkJtnizQ"].value;
+    let cleanedCoco = parseFloat(coco).toFixed(6);
+
+    let injectCoco = document.getElementById("cocoPrice");
+    injectCoco.innerHTML = "";
+    const spanElem = document.createElement("span");
+    const imgElem = document.createElement("img");
+    imgElem.src = "../app/assets/cocoLogo.png";
+    imgElem.classList.add("logo");
+    spanElem.appendChild(imgElem);
+    const textContent = document.createTextNode(
+      ` $COCO = ${cleanedCoco} (USD) ${cleanedCocoChange}%`
+    );
+    injectCoco.appendChild(spanElem);
+    injectCoco.appendChild(textContent);
+
+    if (cleanedCocoChange <= 0) {
+      injectCoco.style.color = "#f45b69";
+    } else {
+      injectCoco.style.color = "#00c377";
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error fetching the coco price:", error);
+    return false;
+  }
+}
+
+async function nanaPrice() {
+  try {
+    const birdeyeKey = CryptoJS.AES.decrypt(
+      localStorage.getItem("apiKey"),
+      localStorage.getItem("uid")
+    ).toString(CryptoJS.enc.Utf8);
+    const option = {
+      method: "GET",
+      headers: { "x-chain": "solana", "x-API-KEY": birdeyeKey },
+    };
+
+    const response = await fetch(
+      "https://public-api.birdeye.so/public/multi_price?list_address=HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr",
+      option
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    let nanaChange =
+      data.data["HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr"].priceChange24h;
+    let cleanedNanaChange = parseFloat(nanaChange).toFixed(2);
+    let nana = data.data["HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr"].value;
+    let cleanedNana = parseFloat(nana).toFixed(6);
+
+    let injectNana = document.getElementById("nanaPrice");
+    injectNana.innerHTML = "";
+    const spanElem = document.createElement("span");
+    const imgElem = document.createElement("img");
+    imgElem.src = "../app/assets/nanaLogo.png";
+    imgElem.classList.add("logo");
+    spanElem.appendChild(imgElem);
+    const textContent = document.createTextNode(
+      ` $NANA = ${cleanedNana} (USD) ${cleanedNanaChange}%`
+    );
+    injectNana.appendChild(spanElem);
+    injectNana.appendChild(textContent);
+
+    if (cleanedNanaChange <= 0) {
+      injectNana.style.color = "#f45b69";
+    } else {
+      injectNana.style.color = "#00c377";
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error fetching the nana price:", error);
+    return false;
+  }
 }
 //  ↓↓ Start private message page function ↓↓
 async function initSendInvitation() {
@@ -903,7 +1050,7 @@ async function initSendInvitation() {
   const qResult = await getDocs(q);
 
   if (qResult.size === 0) {
-    showNotification("error", "Error : un-registered Adress.", 5000);
+    showNotification("error", "Error : un-registered Adress.", 3000);
     return;
   } else {
     qResult.forEach((doc) => {
@@ -931,7 +1078,7 @@ function sendInvite() {
     buttonLoadingAnim(bouton);
     initSendInvitation().then((result1) => {
       if (result1 === "sent") {
-        showNotification("valid", "Invitation sent successfully.", 5000);
+        showNotification("valid", "Invitation sent successfully.", 3000);
         bouton.style.color = "#313131";
         bouton.style.backgroundColor = "#00c377";
         setTimeout(() => {
@@ -941,7 +1088,7 @@ function sendInvite() {
         }, 2000);
         //
       } else if (result1 === "already exist") {
-        showNotification("error", "Error : Session already Exist.", 5000);
+        showNotification("error", "Error : Session already Exist.", 3000);
         bouton.style.color = "#313131";
         bouton.style.backgroundColor = "#f45b69";
         setTimeout(() => {
@@ -1236,7 +1383,7 @@ async function getMessage(docId) {
       ...doc.data(),
     }));
   } catch (error) {
-    showNotification("error", "Error : unable to retrieve message", 5000);
+    showNotification("error", "Error : unable to retrieve message", 3000);
     return;
   }
   docMessage.forEach((message) => {
@@ -1270,7 +1417,7 @@ async function reloadMessage(docId) {
       ...doc.data(),
     }));
   } catch (error) {
-    showNotification("error", "Error : unable to retrieve Message", 5000);
+    showNotification("error", "Error : unable to retrieve Message", 3000);
     return;
   }
   docMessage.forEach((message) => {
@@ -1335,7 +1482,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("AppVersion", version);
   }
   if (storedVersion != version) {
-    showNotification("info", "App have been updated.", 5000);
+    showNotification("info", "App have been updated.", 3000);
     localStorage.setItem("AppVersion", version);
   }
   document.getElementById("version").textContent = "V " + version;

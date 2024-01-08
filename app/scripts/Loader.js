@@ -1,3 +1,6 @@
+import { getMessaging, getToken } from "firebase/messaging";
+import { messaging } from "./initFirebase";
+
 let notif = new Audio(chrome.runtime.getURL("app/assets/notif.mp3"));
 const csp = "script-src 'self'; object-src 'self'";
 let check = false;
@@ -29,6 +32,14 @@ window.addEventListener(
           });
         }, 500);
       }
+    }
+    if (event.data.type && event.data.type == "trackAuction") {
+      chrome.runtime.sendMessage({
+        action: "trackAuction",
+        plotId: event.data.plotId,
+        number: event.data.number,
+        userWallet: event.data.userWallet,
+      });
     }
   },
   false
@@ -78,3 +89,18 @@ style.textContent = `
   display: none;
 }
 `;
+window.addEventListener("ready", function () {
+  try {
+    chrome.storage.sync.get(null, function (data) {
+      let keys = Object.keys(data);
+      let switchData = [];
+      for (let i = 0; i < keys.length; i++) {
+        switchData.push(data["switchState" + i]);
+      }
+      let event = new CustomEvent("miscOptions", { detail: switchData });
+      window.dispatchEvent(event);
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});

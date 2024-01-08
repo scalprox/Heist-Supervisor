@@ -1,6 +1,12 @@
-import { db, app } from "./initFirebase";
+import { db, app, auth } from "./initFirebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { query, doc, getDocs, collection, where } from "firebase/firestore";
+import {
+  onAuthStateChanged,
+  authStateChangeCallback,
+  unsubscribeAuthStateChange,
+} from "firebase/auth";
+
 const functions = getFunctions(app);
 let walletAdress;
 const sendInvitation = httpsCallable(functions, "sendInvitation");
@@ -8,7 +14,20 @@ const sendInvitation = httpsCallable(functions, "sendInvitation");
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.type === "notification") {
     walletAdress = message.adress;
-    send();
+    (() => {
+      const authStateChangeCallback = (user) => {
+        if (user && user.emailVerified) {
+          send();
+        } else {
+          showNotification("error", "Error : You'r not logged in.", "3000");
+          setTimeout(() => {
+            window.close();
+          }, 3000);
+        }
+        unsubscribe();
+      };
+      const unsubscribe = onAuthStateChanged(auth, authStateChangeCallback);
+    })();
   }
 });
 
@@ -76,8 +95,6 @@ async function initSend(invitedUsername, invitedUid) {
 
 async function send() {
   const docRef = collection(db, "users");
-  console.log("second");
-  console.log(walletAdress);
   const q = query(docRef, where("wallet", "==", walletAdress));
   const qResult = await getDocs(q);
 

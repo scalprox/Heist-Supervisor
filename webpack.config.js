@@ -18,7 +18,7 @@ module.exports = [
       errorDetails: true,
     },
     mode: "production",
-    entry: "./app/scripts/notification.js",
+    entry: "./app/scripts/sendInviteScript",
     output: {
       filename: "bundleNotif.js",
       path: path.resolve(__dirname, "dist"),
@@ -54,6 +54,17 @@ module.exports = [
     entry: "./app/scripts/background.js",
     output: {
       filename: "bundleBackground.js",
+      path: path.resolve(__dirname, "dist"),
+    },
+  },
+  {
+    stats: {
+      errorDetails: true,
+    },
+    mode: "production",
+    entry: "./app/scripts/trackAuction.js",
+    output: {
+      filename: "bundleTrackAuction.js",
       path: path.resolve(__dirname, "dist"),
     },
   },

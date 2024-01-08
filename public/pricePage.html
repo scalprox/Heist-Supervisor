@@ -1,10 +1,25 @@
 <div>
   <h1>Actual Price</h1>
 </div>
-<div id="priceContain" class="priceTable">
+<div id="priceContain" class="dynamicTable" style="height: 120.9px">
   <h3 id="solPrice" style="font: size 1.17em"></h3>
   <h3 id="cocoPrice" style="font-size: 1.17em"></h3>
   <h3 id="nanaPrice" style="font-size: 1.17em"></h3>
+  <div id="loadingOverlayPrice" class="loading-box">
+    <div class="loader">
+      <svg class="circular" viewBox="25 25 50 50">
+        <circle
+          class="path"
+          cx="50"
+          cy="50"
+          r="20"
+          fill="none"
+          stroke-width="4"
+          stroke-miterlimit="10"
+        />
+      </svg>
+    </div>
+  </div>
 </div>
 <h1>Trade Link</h1>
 <div class="tradeLink">
@@ -13,7 +28,11 @@
 </div>
 
 <div>
-  <button id="buttonBack" class="buttonBack" style="cursor: pointer">
+  <button
+    id="buttonBack"
+    class="buttonBack"
+    style="cursor: pointer; margin-top: auto"
+  >
     home
   </button>
 </div>

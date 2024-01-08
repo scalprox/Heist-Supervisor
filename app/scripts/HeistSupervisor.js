@@ -1,6 +1,11 @@
+/**   Known bugs
+ * in vault need to stop interval if player dont own nft
+ */
 let withdrawBtnPath;
 let xhrGangData;
+let xhrActualPlotAuction;
 let xhrNotificationData;
+let userWallet;
 let getMoneyId;
 let getMoneyIdLoc;
 let newLiChimp;
@@ -14,6 +19,8 @@ let inHub = false;
 let roundRaffle1;
 let roundRaffle2;
 let hubHtml = false;
+let chimpTang;
+let gorilla;
 const walletAddressRegex =
   /https:\/\/api\.theheist\.game\/nft\/robbers\/wallet-top-performing\/([\w]+)/;
 
@@ -23,6 +30,26 @@ const locTarget = document.querySelector(
 const targetElement = document.querySelector(
   "body > div.MuiDialog-root.location_root__6XsDH.MuiModal-root.css-126xj0f"
 );
+
+(function isUserLogged() {
+  let originalSend = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.send = function () {
+    this.addEventListener("load", function () {
+      if (
+        this.responseURL.includes("https://api.theheist.game/nft/my-robbers") &&
+        this.status === 200
+      ) {
+        initFunction2();
+        const title = searchElement("The heist game").parentElement;
+        const h2 = document.createElement("h2");
+        h2.style.color = "#fff";
+        h2.textContent = "supervised";
+        title.appendChild(h2);
+      }
+    });
+    originalSend.apply(this, arguments);
+  };
+})();
 
 function searchPlaceholder(query) {
   const elements = document.querySelectorAll(
@@ -38,7 +65,7 @@ function searchPlaceholder(query) {
 
 //  ↓↓ auto search element in DOM to prevent path update issue ↓↓
 function searchElement(query) {
-  const element = document.querySelectorAll("button, h3, h2, h1, span, div");
+  const element = document.querySelectorAll("button, h3, h2, h1, span, div, p");
   for (let elem of element) {
     if (elem.textContent.trim() === query) {
       return elem;
@@ -46,7 +73,7 @@ function searchElement(query) {
   }
   return null;
 }
-initFunction2();
+
 function initFunction2() {
   let intervalGang = setInterval(() => {
     let gangButton = searchElement("Gangs");
@@ -60,15 +87,32 @@ function initFunction2() {
   let intervalLocation = setInterval(() => {
     let cityPath = searchElement("City");
     let hub = searchElement("Hub");
-    try {
-      const citySwitch = cityPath.parentElement.children[1].className;
-      let locationPath = searchElement("Safehouse");
-      if (locationPath || (citySwitch.includes("_toggle--active") && hub)) {
-        clearInterval(intervalLocation);
-        startObservingWithdraw();
+    if (cityPath) {
+      const citySwitch = cityPath.parentElement.children[1];
+      if (citySwitch) {
+        if (!citySwitch.className.includes("_toggle--active")) {
+          miscOptions();
+        }
         startObservingHub();
+        startObservingWithdraw();
+        clearInterval(intervalLocation);
+        citySwitch.addEventListener("click", () => {
+          let interval = setInterval(() => {
+            let safeHouse = searchElement("Safehouse");
+            if (
+              !citySwitch.className.includes("_toggle--active") &&
+              safeHouse
+            ) {
+              clearInterval(interval);
+              miscOptions();
+              startObservingHub();
+            } else if (citySwitch.className.includes("_toggle--active")) {
+              clearInterval(interval);
+            }
+          }, 50);
+        });
       }
-    } catch (error) {}
+    }
   }, 50);
 
   let intervalChat = setInterval(() => {
@@ -239,13 +283,21 @@ function maxWithdraw() {
 
 function LocationStats() {
   if (inHub === true) {
+    let badEventPercent = 0;
     const updateLiStats = document.querySelector("#STATS");
     const updateLiChimp = document.querySelector("#percentChimp");
     const updateLiTang = document.querySelector("#percentTang");
+    const updateLiGorilla = document.querySelector("#rillaStats");
 
     //   ↓↓ path to to the top list of location ( safe House, federal reserve....) in the location menu ↓↓
     const elem1 = searchElement("Event table");
     try {
+      let myChimps = searchElement("My Chimps");
+      if (!myChimps) myChimps = searchElement("My Orangutans");
+      if (!myChimps) myChimps = searchElement("My Gorillas");
+
+      const topList =
+        myChimps.parentElement.parentElement.previousElementSibling;
       const CocoTabsList =
         elem1.parentElement.parentElement.parentElement.parentElement
           .children[0].children[0].children[0].children[0];
@@ -257,7 +309,9 @@ function LocationStats() {
               const locQuerry = searchElement("Location Stats");
               if (locQuerry) {
                 clearInterval(interval1);
+                topList.removeEventListener("click", reloadSelectApe);
                 LocationStats();
+                return;
               }
             }, 50);
 
@@ -269,26 +323,62 @@ function LocationStats() {
       //  ↓↓ path to the location ul container ↓↓
       const locQuerry = searchElement("Location Stats");
       const getUl = locQuerry.parentElement.parentElement.children[2];
+      getUl.style.maxHeight = "100%";
       //  ↓↓ path to coco emission value ↓↓
       const CocoEmissionsLoc = getUl.children[3].children[1];
+      //  ↓↓ path of number of rilla value ↓↓
+      const RillaLoc = getUl.children[2].children[1];
       //  ↓↓ path to number of Tang value ↓↓
       const TangLoc = getUl.children[1].children[1];
       //  ↓↓ path to number of Chimp value ↓↓
       const ChimpDoc = getUl.children[0].children[1];
+      const nameClassLi = getUl.children[1].className;
       const nameClassValue = ChimpDoc.className;
       const nameClassLabel = getUl.children[0].children[2].className;
+      const newLiGorilla = document.createElement("li");
+      const newLiStat = document.createElement("li");
+      const newLiChimp = document.createElement("li");
+      const newLiTang = document.createElement("li");
+      const badEventUl = elem1.parentElement.children[3];
+      for (let i = 0; i < badEventUl.children.length; i++) {
+        const eventPercent =
+          badEventUl.children[i].firstElementChild.children[1].children[2]
+            .firstElementChild;
+        let number = parseFloat(eventPercent.textContent.replace("%", ""));
+        badEventPercent = badEventPercent + number;
+      }
       if (ChimpDoc) {
         const CocoToNumber = CocoEmissionsLoc.textContent;
         const Coco = parseInt(CocoToNumber) * 1000;
         let Tangtxt = TangLoc.textContent;
         let Chimptxt = ChimpDoc.textContent;
+        let Rillatxt = RillaLoc.textContent;
+        let Rilla = parseInt(Rillatxt);
         let Tang = parseInt(Tangtxt);
         let Chimp = parseInt(Chimptxt);
 
+        const apePerRilla = Math.round((Tang + Chimp) / Rilla);
         const tangPercentage = Math.round((Tang / (Tang + Chimp)) * 100);
         const chimpPercentage = Math.round((Chimp / (Tang + Chimp)) * 100);
         const cocoDistribution = Math.floor(Coco / (Tang + Chimp));
-
+        const estHourlyRilla = Math.round(
+          (badEventPercent / 100) * apePerRilla * cocoDistribution
+        );
+        if (updateLiGorilla) {
+          updateLiGorilla.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+          <span class="${nameClassValue}">${estHourlyRilla}</span>
+          <span class="${nameClassLabel}">Est. Hourly $COCO per Gorilla</span>  
+    `;
+        } else {
+          newLiGorilla.className = nameClassLi;
+          newLiGorilla.id = "rillaStats";
+          newLiGorilla.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+          <span class="${nameClassValue}">${estHourlyRilla}</span>
+          <span class="${nameClassLabel}">Est. Hourly $COCO per Gorilla</span>  
+    `;
+        }
         if (updateLiTang) {
           updateLiTang.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
@@ -296,8 +386,7 @@ function LocationStats() {
       <span class="${nameClassLabel}">Of Tangs</span>  
 `;
         } else {
-          newLiTang = document.createElement("li");
-          newLiTang.className = "_asideListItem_13mm0_67";
+          newLiTang.className = nameClassLi;
           newLiTang.id = "percentTang";
           newLiTang.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
@@ -312,8 +401,7 @@ function LocationStats() {
       <span class="${nameClassLabel}">Of Chimps</span>  
 `;
         } else {
-          newLiChimp = document.createElement("li");
-          newLiChimp.className = "_asideListItem_13mm0_67";
+          newLiChimp.className = nameClassLi;
           newLiChimp.id = "percentChimp";
           newLiChimp.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
@@ -325,18 +413,15 @@ function LocationStats() {
           updateLiStats.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
         <span class="${nameClassValue}">${cocoDistribution}</span>
-        <span class="${nameClassLabel}">$COCO per TANG/CHIMP</span>
-          
-
+        <span class="${nameClassLabel}">Est. Hourly $COCO per TANG/CHIMP</span>
       `;
         } else {
-          const newLiStat = document.createElement("li");
-          newLiStat.className = "_asideListItem_13mm0_67";
+          newLiStat.className = nameClassLi;
           newLiStat.id = "STATS";
           newLiStat.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
         <span class="${nameClassValue}">${cocoDistribution}</span>
-        <span class="${nameClassLabel}">$COCO per TANG/CHIMP</span>
+        <span class="${nameClassLabel}">Est. Hourly $COCO per TANG/CHIMP</span>
       
       `;
         }
@@ -344,10 +429,21 @@ function LocationStats() {
           getUl.appendChild(newLiStat);
           getUl.appendChild(newLiChimp);
           getUl.appendChild(newLiTang);
+          getUl.appendChild(newLiGorilla);
         }
         CocoTabsClicked = false;
       }
-    } catch (error) {}
+      const selectApeFunction = miscOptions("locations");
+      selectApeFunction();
+
+      function reloadSelectApe() {
+        setTimeout(selectApeFunction, 100);
+      }
+
+      topList.addEventListener("click", reloadSelectApe);
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
 
@@ -367,28 +463,28 @@ function startObservingHub() {
           let interval = setInterval(() => {
             const checkLoc = searchElement("Location Stats");
             const checkHub = searchElement("Blackmarket");
+            const landPool = searchElement("LAND POOL");
+            const auction = searchElement("Your bid");
             if (checkLoc) {
               clearInterval(interval);
               setTimeout(LocationStats, 700);
             }
             if (checkHub) {
               clearInterval(interval);
+              const loopCheck = searchElement("Blackmarket");
+              const ulButton = loopCheck.parentElement.parentElement;
               let interval1 = setInterval(() => {
-                const elem1 = searchElement("ORANGUTANS COMING");
-                if (elem1) {
-                  try {
-                    const elem2 =
-                      elem1.parentElement.parentElement.parentElement
-                        .children[1].children[1].children[1].children[1]
-                        .firstElementChild.firstElementChild;
-                    if (elem2) {
-                      clearInterval(interval1);
-                      setTimeout(nftRecruitment, 700);
-                      setTimeout(raffleTicket, 700);
-                    }
-                  } catch (error) {}
+                if (ulButton.children[2]) {
+                  clearInterval(interval1);
+                  checkHubTab();
                 }
               }, 50);
+            }
+            if (auction) {
+              clearInterval(interval);
+            }
+            if (landPool) {
+              clearInterval(interval);
             }
           }, 100);
         } else {
@@ -403,6 +499,204 @@ function startObservingHub() {
   });
   const observerConfig = { attributes: true, attributeFilter: ["aria-hidden"] };
   observer.observe(elementToObserve, observerConfig);
+}
+let activeTab;
+function checkHubTab() {
+  if (document.body.style.overflow != "hidden") {
+    return;
+  }
+  const loopCheck = searchElement("Blackmarket");
+  const ulButton = loopCheck.parentElement.parentElement;
+
+  try {
+    for (let i = 0; i < ulButton.children.length; i++) {
+      const li = ulButton.children[i];
+
+      li.removeEventListener("click", clicked);
+
+      if (
+        li.firstElementChild.className.includes("--active") &&
+        activeTab != li
+      ) {
+        activeTab = li;
+        functionHubTab[i]();
+        if (i === 1) {
+          const selectApeFunction = miscOptions("vault");
+          selectApeFunction();
+        }
+      } else if (
+        li.firstElementChild.className.includes("--active") &&
+        activeTab == li
+      ) {
+        setTimeout(() => {
+          clicked();
+        }, 100);
+        return;
+      }
+      if (!li.firstElementChild.className.includes("--active")) {
+        li.addEventListener("click", clicked);
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  function clicked() {
+    for (let n = 0; n < ulButton.children.length; n++) {
+      ulButton.children[n].removeEventListener("click", clicked);
+    }
+    checkHubTab();
+  }
+}
+
+const functionHubTab = [
+  hubTab0,
+  hubTab1,
+  hubTab2,
+  hubTab3,
+  hubTab4,
+  hubTab5,
+  hubTab6,
+];
+
+function hubTab0() {
+  // social
+  console.log("social");
+  let interval1 = setInterval(() => {
+    const elem1 = searchElement("ORANGUTANS COMING");
+    if (elem1) {
+      try {
+        const elem2 =
+          elem1.parentElement.parentElement.parentElement.children[1]
+            .children[1].children[1].children[1];
+        if (elem2) {
+          const elem3 = elem2.firstElementChild.firstElementChild;
+          if (elem3) {
+            clearInterval(interval1);
+            setTimeout(nftRecruitment, 700);
+            setTimeout(raffleTicket, 700);
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }, 50);
+}
+
+function reloadHubTab1() {
+  hubTab1();
+  return;
+}
+
+function hubTab1() {
+  //  vault
+  console.log("restart");
+  let interval = setInterval(() => {
+    const path = searchElement("Show Info").parentElement.nextElementSibling;
+    if (document.body.style.overflow != "hidden") {
+      return;
+    }
+    if (path) {
+      const nftUl = path.children[1];
+      if (nftUl) {
+        const checkChange =
+          path.firstElementChild.firstElementChild.children[1];
+        if (checkChange) {
+          clearInterval(interval);
+
+          checkChange.removeEventListener("click", reloadHubTab1);
+          checkChange.addEventListener("click", reloadHubTab1);
+          try {
+            for (let i = 0; i < nftUl.children.length; i++) {
+              if (nftUl.children.length == 0) {
+                break;
+              }
+              const nftLi = nftUl.children[i];
+              const upgradeBtn =
+                nftLi.firstElementChild.children[2].firstElementChild;
+              upgradeBtn.addEventListener("click", maxUpgrade);
+            }
+          } catch (error) {
+            console.error(error);
+          }
+
+          function maxUpgrade() {
+            for (let n = 0; n < nftUl.children.length; n++) {
+              nftUl.children[n].removeEventListener("click", maxUpgrade);
+            }
+            let interval = setInterval(() => {
+              const path = searchElement("Each Point Increases yield");
+              if (path) {
+                clearInterval(interval);
+                const ulUpgrade =
+                  path.parentElement.parentElement.parentElement.parentElement;
+                for (let i = 0; i < ulUpgrade.children.length; i++) {
+                  if (
+                    document.getElementById("maxBtn" + i) ||
+                    ulUpgrade.children[i].className.includes("prestige")
+                  ) {
+                    continue;
+                  }
+                  const liUpgrade = ulUpgrade.children[i];
+                  const btnContainer = liUpgrade.children[1];
+                  const btnClass =
+                    btnContainer.children[2].children[1].className;
+                  const button = document.createElement("button");
+                  button.id = "maxBtn" + i;
+                  button.className = btnClass;
+                  button.textContent = "MAX";
+                  button.style.width = "153px";
+                  btnContainer.insertBefore(button, btnContainer.children[3]);
+                  document
+                    .getElementById("maxBtn" + [i])
+                    .addEventListener("click", () => {
+                      let inputEvent = Object.getOwnPropertyDescriptor(
+                        window.HTMLInputElement.prototype,
+                        "value"
+                      );
+                      let placeHolder =
+                        liUpgrade.children[1].children[2].firstElementChild
+                          .children[1];
+                      inputEvent.set.call(placeHolder, 99);
+                      placeHolder.dispatchEvent(
+                        new Event("input", { bubbles: true })
+                      );
+                    });
+                }
+              }
+            }, 50);
+          }
+        }
+      }
+    }
+  }, 100);
+
+  console.log("vault");
+}
+
+function hubTab2() {
+  //  market
+  console.log("market");
+}
+
+function hubTab3() {
+  //  blackMarket
+  console.log("bm");
+}
+
+function hubTab4() {
+  //  rewards
+  console.log("reward");
+}
+
+function hubTab5() {
+  //  cosmetic
+  console.log("cosmetic");
+}
+
+function hubTab6() {
+  //  cosmetic store
 }
 
 function startObservingWithdraw() {
@@ -587,6 +881,10 @@ function notifTracker() {
           addNewNotif(JSON.parse(realXHR.responseText));
           setTimeout(openNotifProfile, 1000);
         }
+        if (realXHR.responseURL.includes("https://api.theheist.game/auth/me")) {
+          let response = JSON.parse(realXHR.responseText);
+          userWallet = response.id;
+        }
       }
     };
     return realXHR;
@@ -638,31 +936,38 @@ function addNewNotif(newNotif) {
 function searchPlayer(walletAdress, playerName) {
   const hubBtn = searchElement("Hub");
   hubBtn.click();
-  let checkLoad = setInterval(() => {
-    const searchBtn = searchElement("Player search").firstElementChild;
-    if (searchBtn) {
-      clearInterval(checkLoad);
-      searchBtn.click();
-      let checkLoad2 = setInterval(() => {
-        const placeHolder = searchPlaceholder("Player Search");
-        if (placeHolder) {
-          clearInterval(checkLoad2);
-          let inputEvent = Object.getOwnPropertyDescriptor(
-            window.HTMLInputElement.prototype,
-            "value"
-          );
-          inputEvent.set.call(placeHolder, walletAdress);
-          placeHolder.dispatchEvent(new Event("input", { bubbles: true }));
-          let checkLoad3 = setInterval(() => {
-            const playerPath = document.querySelector(
-              "#player-scroller > div.infinite-scroll-component__outerdiv > div > div > div"
-            );
-            if (playerPath) {
-              if (playerPath.textContent == playerName) {
-                clearInterval(checkLoad3);
-                playerPath.click();
-                addInviteButtonInProfile();
-              }
+  let interval = setInterval(() => {
+    const social = searchElement("Social");
+    if (social) {
+      clearInterval(interval);
+      social.click();
+      let checkLoad = setInterval(() => {
+        const searchBtn = searchElement("Player search").firstElementChild;
+        if (searchBtn) {
+          clearInterval(checkLoad);
+          searchBtn.click();
+          let checkLoad2 = setInterval(() => {
+            const placeHolder = searchPlaceholder("Player Search");
+            if (placeHolder) {
+              clearInterval(checkLoad2);
+              let inputEvent = Object.getOwnPropertyDescriptor(
+                window.HTMLInputElement.prototype,
+                "value"
+              );
+              inputEvent.set.call(placeHolder, walletAdress);
+              placeHolder.dispatchEvent(new Event("input", { bubbles: true }));
+              let checkLoad3 = setInterval(() => {
+                const playerPath = document.querySelector(
+                  "#player-scroller > div.infinite-scroll-component__outerdiv > div > div > div"
+                );
+                if (playerPath) {
+                  if (playerPath.textContent == playerName) {
+                    clearInterval(checkLoad3);
+                    playerPath.click();
+                    addInviteButtonInProfile();
+                  }
+                }
+              }, 30);
             }
           }, 30);
         }
@@ -804,33 +1109,40 @@ function openProfileFromGang(username, wallet, closeBtn) {
           clearInterval(interval2);
           hubBtn.click();
           let interval3 = setInterval(() => {
-            const searchPlayerBtn =
-              searchElement("Player search").firstElementChild;
-            if (searchPlayerBtn) {
+            const socialBtn = searchElement("Social");
+            if (socialBtn) {
               clearInterval(interval3);
-              searchPlayerBtn.click();
+              socialBtn.click();
               let interval4 = setInterval(() => {
-                const placeHolder = searchPlaceholder("Player Search");
-                if (placeHolder) {
+                const searchPlayerBtn =
+                  searchElement("Player search").firstElementChild;
+                if (searchPlayerBtn) {
                   clearInterval(interval4);
-                  let inputEvent = Object.getOwnPropertyDescriptor(
-                    window.HTMLInputElement.prototype,
-                    "value"
-                  );
-                  inputEvent.set.call(placeHolder, wallet);
-                  placeHolder.dispatchEvent(
-                    new Event("input", { bubbles: true })
-                  );
+                  searchPlayerBtn.click();
                   let interval5 = setInterval(() => {
-                    const playerPath = document.querySelector(
-                      "#player-scroller > div.infinite-scroll-component__outerdiv > div > div > div"
-                    );
-                    if (playerPath) {
-                      if (playerPath.textContent == username) {
-                        clearInterval(interval5);
-                        playerPath.click();
-                        addInviteButtonInProfile();
-                      }
+                    const placeHolder = searchPlaceholder("Player Search");
+                    if (placeHolder) {
+                      clearInterval(interval5);
+                      let inputEvent = Object.getOwnPropertyDescriptor(
+                        window.HTMLInputElement.prototype,
+                        "value"
+                      );
+                      inputEvent.set.call(placeHolder, wallet);
+                      placeHolder.dispatchEvent(
+                        new Event("input", { bubbles: true })
+                      );
+                      let interval6 = setInterval(() => {
+                        const playerPath = document.querySelector(
+                          "#player-scroller > div.infinite-scroll-component__outerdiv > div > div > div"
+                        );
+                        if (playerPath) {
+                          if (playerPath.textContent == username) {
+                            clearInterval(interval6);
+                            playerPath.click();
+                            addInviteButtonInProfile();
+                          }
+                        }
+                      }, 30);
                     }
                   }, 30);
                 }
@@ -842,3 +1154,173 @@ function openProfileFromGang(username, wallet, closeBtn) {
     }
   }, 30);
 }
+let option1;
+function miscOptions(path) {
+  let event = new CustomEvent("ready");
+  window.dispatchEvent(event);
+  try {
+    if (!option1) {
+      option1 = initOption1();
+    }
+    if (path === "locations" || path === "vault") {
+      return option1(path);
+    }
+    let switchFunctions = [options0, option1, options2];
+    window.addEventListener(
+      "miscOptions",
+      function (event) {
+        event.detail.forEach((switchState, index) => {
+          if (switchState == true) {
+            switchFunctions[index](true);
+          }
+        });
+      },
+      { once: true }
+    );
+
+    function options0() {
+      let interval1 = setInterval(() => {
+        const policeStation = searchElement("Police Station");
+        if (policeStation) {
+          const animatedList =
+            policeStation.parentElement.children[1].className;
+          if (animatedList) {
+            clearInterval(interval1);
+            const elem = document.querySelectorAll("." + animatedList);
+            elem.forEach(function (element) {
+              element.parentNode.removeChild(element);
+            });
+          }
+        }
+      }, 500);
+    }
+    function initOption1() {
+      let active;
+      return function option1(data) {
+        if (data !== undefined && typeof data == "boolean") {
+          active = data;
+          return;
+        }
+        if (!active) {
+          return;
+        }
+        if (data == "locations") {
+          return function () {
+            setTopApeLoc();
+          };
+        }
+        if (data == "vault") {
+          return function () {
+            setTopApeVault();
+          };
+        }
+        function setTopApeVault() {
+          try {
+            if (chimpTang) {
+              const nfts =
+                searchElement("Show Info").parentElement.nextElementSibling;
+              const tangButton =
+                nfts.firstElementChild.children[0].children[1].children[1];
+              const rillaButton =
+                nfts.firstElementChild.children[0].children[1].children[2];
+
+              let Chimp = 0;
+              let Tang = 0;
+              let Rilla = 0;
+
+              for (let i = 0; i < chimpTang.length; i++) {
+                let ape = chimpTang[i].species;
+                if (ape === "Orangutan") {
+                  Tang++;
+                }
+                if (ape === "Chimp") {
+                  Chimp++;
+                }
+              }
+              if (gorilla.length > 0) {
+                for (let i = 0; i < gorilla.length; i++) {
+                  Rilla++;
+                }
+              }
+              const topApe = Math.max(Chimp, Tang, Rilla);
+              if (topApe === Tang) tangButton.click();
+              if (topApe === Rilla) rillaButton.click();
+            }
+          } catch (error) {
+            console.error(error);
+          }
+        }
+        function setTopApeLoc() {
+          try {
+            if (chimpTang) {
+              let Chimp = 0;
+              let Tang = 0;
+              let Rilla = 0;
+
+              for (let i = 0; i < chimpTang.length; i++) {
+                let ape = chimpTang[i].species;
+                if (ape === "Orangutan") {
+                  Tang++;
+                }
+                if (ape === "Chimp") {
+                  Chimp++;
+                }
+              }
+              if (gorilla.length > 0) {
+                for (let i = 0; i < gorilla.length; i++) {
+                  Rilla++;
+                }
+              }
+
+              let checkChimp = searchElement("My Chimps");
+              if (!checkChimp) checkChimp = searchElement("My Orangutans");
+              if (!checkChimp) checkChimp = searchElement("My Gorillas");
+              const apesList = checkChimp.nextElementSibling.firstElementChild;
+              const chimpButton = apesList.children[0];
+              const tangButton = apesList.children[1];
+              const rillaButton = apesList.children[2];
+              const inLocChimp = parseFloat(
+                chimpButton.children[1].textContent
+              );
+              const inLocTang = parseFloat(tangButton.children[1].textContent);
+              const inLocRilla = parseFloat(
+                rillaButton.children[1].textContent
+              );
+              const topApe = Math.max(inLocChimp, inLocRilla, inLocTang);
+              if (topApe === inLocChimp) return;
+              if (topApe === inLocRilla) rillaButton.click();
+              if (topApe === inLocTang) tangButton.click();
+            }
+          } catch (error) {
+            console.error(error);
+          }
+        }
+      };
+    }
+    function options2() {}
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+var apeOldXHR = window.XMLHttpRequest;
+function observeApeXHR() {
+  let realXHR = new apeOldXHR();
+
+  realXHR.onreadystatechange = function () {
+    if (realXHR.readyState == 4 && realXHR.status == 200) {
+      if (
+        realXHR.responseURL.includes("https://api.theheist.game/nft/my-robbers")
+      ) {
+        chimpTang = JSON.parse(realXHR.responseText);
+      }
+      if (
+        realXHR.responseURL.includes("https://api.theheist.game/nft/my-cops")
+      ) {
+        gorilla = JSON.parse(realXHR.responseText);
+      }
+    }
+  };
+  return realXHR;
+}
+window.XMLHttpRequest = observeApeXHR;
