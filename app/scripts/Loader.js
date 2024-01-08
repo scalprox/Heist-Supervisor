@@ -33,14 +33,6 @@ window.addEventListener(
         }, 500);
       }
     }
-    if (event.data.type && event.data.type == "trackAuction") {
-      chrome.runtime.sendMessage({
-        action: "trackAuction",
-        plotId: event.data.plotId,
-        number: event.data.number,
-        userWallet: event.data.userWallet,
-      });
-    }
   },
   false
 );

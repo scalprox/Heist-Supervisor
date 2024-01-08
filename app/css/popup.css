@@ -311,7 +311,7 @@ ul {
   border-style: solid;
   padding: 15px;
   overflow: auto;
-  height: 470px;
+  height: 450px;
 }
 #message {
   display: flex;

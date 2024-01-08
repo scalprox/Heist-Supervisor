@@ -1080,22 +1080,18 @@ function sendInvite() {
       if (result1 === "sent") {
         showNotification("valid", "Invitation sent successfully.", 3000);
         bouton.style.color = "#313131";
-        bouton.style.backgroundColor = "#00c377";
-        setTimeout(() => {
-          bouton.className = "button";
-          bouton.style.backgroundColor = "#e2e8c0";
-          bouton.id = "sendInvite";
-        }, 2000);
+        bouton.className = "button";
+        bouton.textContent = "send invite";
+        bouton.style.backgroundColor = "#e2e8c0";
+        bouton.id = "sendInvite";
         //
       } else if (result1 === "already exist") {
         showNotification("error", "Error : Session already Exist.", 3000);
         bouton.style.color = "#313131";
-        bouton.style.backgroundColor = "#f45b69";
-        setTimeout(() => {
-          bouton.className = "button";
-          bouton.style.backgroundColor = "#e2e8c0";
-          bouton.id = "sendInvite";
-        }, 2000);
+        bouton.className = "button";
+        bouton.style.backgroundColor = "#e2e8c0";
+        bouton.id = "sendInvite";
+        bouton.textContent = "send invite";
       } else {
         setTimeout(() => {
           bouton.style.color = "#313131";

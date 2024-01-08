@@ -3,7 +3,6 @@
  */
 let withdrawBtnPath;
 let xhrGangData;
-let xhrActualPlotAuction;
 let xhrNotificationData;
 let userWallet;
 let getMoneyId;

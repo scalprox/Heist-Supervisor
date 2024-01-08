@@ -57,15 +57,4 @@ module.exports = [
       path: path.resolve(__dirname, "dist"),
     },
   },
-  {
-    stats: {
-      errorDetails: true,
-    },
-    mode: "production",
-    entry: "./app/scripts/trackAuction.js",
-    output: {
-      filename: "bundleTrackAuction.js",
-      path: path.resolve(__dirname, "dist"),
-    },
-  },
 ];

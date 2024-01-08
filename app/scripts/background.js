@@ -57,37 +57,4 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       }
     );
   }
-  if (message.action === "trackAuction") {
-    if (!alreadyOpen) {
-      alreadyOpen = true;
-      setTimeout(() => {
-        alreadyOpen = false;
-      }, 1000);
-      const data = {
-        plotId: message.plotId,
-        number: message.number,
-        userWallet: message.userWallet,
-      };
-      chrome.windows.getCurrent(function (currentWindow) {
-        // Calculer la position en haut à droite
-        var leftPosition = currentWindow.left + (currentWindow.width - 388); // 300 est la largeur de la nouvelle fenêtre
-        var topPosition = currentWindow.top;
-        chrome.windows.create({
-          url: chrome.runtime.getURL("./public/trackAuctionPage.html"),
-          type: "popup",
-          width: 388,
-          height: 568,
-          top: topPosition,
-          left: leftPosition,
-        });
-        chrome.runtime.onMessage.addListener(
-          (message, sender, sendResponse) => {
-            if (message.type === "requestData") {
-              sendResponse(data);
-            }
-          }
-        );
-      });
-    }
-  }
 });
