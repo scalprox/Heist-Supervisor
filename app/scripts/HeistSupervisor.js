@@ -1,6 +1,3 @@
-/**   Known bugs
- * in vault need to stop interval if player dont own nft
- */
 let withdrawBtnPath;
 let xhrGangData;
 let xhrNotificationData;
@@ -560,7 +557,6 @@ const functionHubTab = [
 
 function hubTab0() {
   // social
-  console.log("social");
   let interval1 = setInterval(() => {
     const elem1 = searchElement("ORANGUTANS COMING");
     if (elem1) {
@@ -590,7 +586,6 @@ function reloadHubTab1() {
 
 function hubTab1() {
   //  vault
-  console.log("restart");
   let interval = setInterval(() => {
     const path = searchElement("Show Info").parentElement.nextElementSibling;
     if (document.body.style.overflow != "hidden") {
@@ -670,28 +665,22 @@ function hubTab1() {
       }
     }
   }, 100);
-
-  console.log("vault");
 }
 
 function hubTab2() {
   //  market
-  console.log("market");
 }
 
 function hubTab3() {
   //  blackMarket
-  console.log("bm");
 }
 
 function hubTab4() {
   //  rewards
-  console.log("reward");
 }
 
 function hubTab5() {
   //  cosmetic
-  console.log("cosmetic");
 }
 
 function hubTab6() {
@@ -700,7 +689,6 @@ function hubTab6() {
 
 function startObservingWithdraw() {
   //   ↓↓ location of the withdraw / deposit Tab ↓↓
-  const elem1 = searchElement("Gangs");
   const elem2 = elem1.parentElement;
   const elem3 = elem2.children[1];
   const elementToObserve = elem3.firstElementChild;

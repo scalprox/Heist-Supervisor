@@ -588,6 +588,7 @@ function pricePage() {
     <button id="submitApiKey" class="button">Submit Api Key</button>
     `);
     path.appendChild(form);
+    document.getElementById("loadingOverlayPrice").style.display = "none";
     document
       .getElementById("submitApiKey")
       .addEventListener("click", (event) => {

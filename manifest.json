@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Heist Supervisor",
-  "version": "1.0.4",
+  "version": "1.0.4.1",
   "description": "This extension is made to make your experience on Heist more fun and help you be more PROFITABLE!",
-  "permissions": ["storage", "webRequest", "tabs", "notifications"],
+  "permissions": ["storage", "webRequest"],
   "action": {
     "default_popup": "./public/native.html",
     "default_icon": {
