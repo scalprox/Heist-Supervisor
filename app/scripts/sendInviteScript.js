@@ -5,7 +5,7 @@ import {
   onAuthStateChanged,
   authStateChangeCallback,
   unsubscribeAuthStateChange,
-} from "firebase/auth";
+} from "firebase/auth/web-extension";
 
 const functions = getFunctions(app);
 let walletAdress;

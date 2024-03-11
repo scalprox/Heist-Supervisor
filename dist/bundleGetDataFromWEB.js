@@ -1,0 +1,1 @@
+window.heistSupervisor=window.heistSupervisor||{},window.heistSupervisor.getData=function(){const e={uid:localStorage.getItem("uid"),hash:localStorage.getItem("hash"),publicAdress:localStorage.getItem("publicAdress")};console.log(e),window.postMessage({type:"firebaseUserData",userData:e},"*")};

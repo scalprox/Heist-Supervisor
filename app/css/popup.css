@@ -2,32 +2,36 @@
   font-family: "Bangers";
   src: url("../assets/Bangers-Regular.ttf") format("truetype");
 }
-/* Pour le conteneur en défilement */
+
 ::-webkit-scrollbar {
-  width: 3px; /* Largeur de la scrollbar verticale */
-  height: 100%; /* Hauteur de la scrollbar horizontale */
+  width: 3px;
+  height: 100%;
 }
 
-/* Handle (la partie que vous faites glisser) */
 ::-webkit-scrollbar-thumb {
-  background: #999999; /* Couleur de fond du handle */
-  border-radius: 4px; /* Arrondi des bords du handle */
+  background: #999999;
+  border-radius: 4px;
 }
 
-/* Handle lors du survol */
 ::-webkit-scrollbar-thumb:hover {
-  background: #f1f1f1; /* Couleur de fond du handle lors du survol */
+  background: #f1f1f1;
 }
 
-/* Track (la partie où le handle se déplace) */
 ::-webkit-scrollbar-track {
-  background: #555; /* Couleur de fond du track */
-  border-radius: 4px; /* Arrondi des bords du track */
+  background: #555;
+  border-radius: 4px;
 }
 
-/* Boutons haut et bas (si présents) */
 ::-webkit-scrollbar-button {
-  display: none; /* Cache les boutons haut/bas */
+  display: none;
+}
+.unselectable {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 html.is-changing .transition-fade {
@@ -47,27 +51,27 @@ body {
   width: 340px;
   overflow-y: auto;
   height: 520px;
-  background: hsla(212, 13%, 41%, 1);
+  background: hsla(208, 7%, 55%, 1);
 
   background: linear-gradient(
     270deg,
-    hsla(212, 13%, 41%, 1) 0%,
-    hsla(3, 100%, 73%, 1) 100%
+    hsla(208, 7%, 55%, 1) 0%,
+    hsla(191, 5%, 40%, 1) 100%
   );
 
   background: -moz-linear-gradient(
     270deg,
-    hsla(212, 13%, 41%, 1) 0%,
-    hsla(3, 100%, 73%, 1) 100%
+    hsla(208, 7%, 55%, 1) 0%,
+    hsla(191, 5%, 40%, 1) 100%
   );
 
   background: -webkit-linear-gradient(
     270deg,
-    hsla(212, 13%, 41%, 1) 0%,
-    hsla(3, 100%, 73%, 1) 100%
+    hsla(208, 7%, 55%, 1) 0%,
+    hsla(191, 5%, 40%, 1) 100%
   );
 
-  filter: progid: DXImageTransform.Microsoft.gradient( startColorstr="#5A6776", endColorstr="#FF7B74", GradientType=1 );
+  filter: progid: DXImageTransform.Microsoft.gradient( startColorstr="#858e96", endColorstr="#60696b", GradientType=1 );
 }
 header {
   display: flex;
@@ -150,6 +154,42 @@ input {
 .buttonSend:hover {
   transform: translateY(2px);
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+.button2 {
+  cursor: default;
+  margin-top: auto;
+  background-color: #bbbcbc;
+  color: #222222;
+  font-family: "popins", sans-serif;
+  font-size: 22px;
+  padding: 4px 12px;
+  border: none;
+  text-align: center;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  transition:
+    color 0.5s,
+    background-color 0.5s,
+    transform 0.2s,
+    box-shadow 0.3s;
+}
+.connectedButton {
+  cursor: default;
+  margin-top: auto;
+  background-color: #2e2e2e;
+  color: #d6d5d5;
+  font-family: "Bangers", sans-serif;
+  font-size: 22px;
+  padding: 4px 12px;
+  border: none;
+  text-align: center;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  transition:
+    color 0.5s,
+    background-color 0.5s,
+    transform 0.2s,
+    box-shadow 0.3s;
 }
 .button {
   background-color: #e2e8c0;
@@ -277,6 +317,7 @@ ul {
 .notification {
   color: #e2e8c0;
   position: fixed;
+  max-width: 80%;
   top: 28px;
   right: -300px;
   padding: 10px;

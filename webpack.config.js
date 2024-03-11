@@ -39,8 +39,9 @@ module.exports = [
     stats: {
       errorDetails: true,
     },
-    mode: "production",
+    mode: "development",
     entry: "./app/scripts/HeistSupervisor.js",
+    devtool: "inline-source-map",
     output: {
       filename: "bundleHeistSupervisor.js",
       path: path.resolve(__dirname, "dist"),
@@ -54,6 +55,17 @@ module.exports = [
     entry: "./app/scripts/background.js",
     output: {
       filename: "bundleBackground.js",
+      path: path.resolve(__dirname, "dist"),
+    },
+  },
+  {
+    stats: {
+      errorDetails: true,
+    },
+    mode: "production",
+    entry: "./app/scripts/getDataFromWEB.js",
+    output: {
+      filename: "bundleGetDataFromWEB.js",
       path: path.resolve(__dirname, "dist"),
     },
   },

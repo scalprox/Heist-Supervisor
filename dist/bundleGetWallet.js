@@ -1,0 +1,1 @@
+setTimeout((function(){window.solana.connect().then((n=>{console.log("connected with :",n.publicKey.toString())})).catch((n=>{throw new Error("ERROR while auth :",n)}))}),3e3);
