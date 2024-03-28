@@ -399,7 +399,7 @@ async function pricePage() {
   activePage = "pricePage";
   buttonBack = document.getElementById("buttonBack");
   content0 = document.getElementById("dynamicContent");
-  const kiwiButton = document.getElementById("tradekiwi");
+  const kiwiButton = document.getElementById("tradeKiwi");
   const nanaButton = document.getElementById("tradeNana");
   let elementsLoaded = 0;
   const parent = document.getElementById("loadingOverlayPrice");
@@ -411,6 +411,7 @@ async function pricePage() {
   parent.appendChild(newChild);
   try {
     const kiwi = await kiwiPrice();
+    console.log(kiwi);
     if (kiwi) {
       elementsLoaded++;
       document.getElementById("elementsLoaded").textContent =
@@ -451,7 +452,7 @@ async function pricePage() {
 
     kiwiButton.addEventListener("click", () => {
       window.open(
-        "https://birdeye.so/token/74DSHnK1qqr4z1pXjLjPAVi8XFngZ635jEVpdkJtnizQ?chain=solana",
+        "https://birdeye.so/token/66Qq2qS67K4L5xQ3xUTinCyxzdPeZQG1R1ipK8jrY7gc?chain=solana",
         "blank"
       );
     });
@@ -585,7 +586,7 @@ async function connectUser() {
               errorMessage = "Unable to auth with provided DATA.";
               break;
             case "dont-own-token":
-              errorMessage = "You are not allowed to access.";
+              errorMessage = "You don't own SOL anymore";
               break;
             default:
               break;
@@ -662,11 +663,10 @@ async function kiwiPrice() {
   try {
     const option = {
       method: "GET",
-      headers: { accept: "application/json" },
     };
 
     const response = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=kiwi-token-2&vs_currencies=usd&include_24hr_change=true",
+      "https://price.jup.ag/v4/price?ids=KIWI",
       option
     );
     if (!response.ok) {
@@ -674,9 +674,10 @@ async function kiwiPrice() {
     }
     const data = await response.json();
 
-    let kiwiChange = data["kiwi-token-2"].usd_24h_change;
-    let cleanedkiwiChange = parseFloat(kiwiChange).toFixed(2);
-    let kiwi = data["kiwi-token-2"].usd;
+    // let kiwiChange = data["kiwi-token-2"].usd_24h_change;
+    // let cleanedkiwiChange = parseFloat(kiwiChange).toFixed(2);
+    console.log(data);
+    let kiwi = data.data.KIWI.price;
     let cleanedkiwi = parseFloat(kiwi).toFixed(6);
 
     let injectkiwi = document.getElementById("kiwiPrice");
@@ -686,17 +687,21 @@ async function kiwiPrice() {
     imgElem.src = "../app/assets/kiwiLogo.png";
     imgElem.classList.add("logo");
     spanElem.appendChild(imgElem);
+    // const textContent = document.createTextNode(
+    //   ` $KIWI = $${cleanedkiwi} (USD) ${cleanedkiwiChange}%`
+    // );
     const textContent = document.createTextNode(
-      ` $KIWI = $${cleanedkiwi} (USD) ${cleanedkiwiChange}%`
+      ` $KIWI = $${cleanedkiwi} (USD)`
     );
     injectkiwi.appendChild(spanElem);
     injectkiwi.appendChild(textContent);
+    injectkiwi.style.color = "white";
 
-    if (cleanedkiwiChange <= 0) {
-      injectkiwi.style.color = "#f45b69";
-    } else {
-      injectkiwi.style.color = "#00c377";
-    }
+    // if (cleanedkiwiChange <= 0) {
+    //   injectkiwi.style.color = "#f45b69";
+    // } else {
+    //   injectkiwi.style.color = "#00c377";
+    // }
 
     return true;
   } catch (error) {
@@ -804,13 +809,14 @@ function sendInvite() {
         bouton.style.color = "#313131";
         bouton.className = "button";
         bouton.style.backgroundColor = "#e2e8c0";
-        bouton.id = "sendInvite";
         bouton.textContent = "send invite";
+        bouton.id = "sendInvite";
       } else {
         setTimeout(() => {
           bouton.style.color = "#313131";
           bouton.className = "button";
           bouton.style.backgroundColor = "#e2e8c0";
+          bouton.textContent = "send invite";
           bouton.id = "sendInvite";
         }, 2000);
       }
@@ -1086,7 +1092,6 @@ async function getMessage(docId) {
   let docMessage = [];
   ulPath.innerHTML = DOMPurify.sanitize(``);
   const username = localStorage.getItem("username");
-
   try {
     const docRef = collection(db, "privateMessage", currentChanel, "chat");
     const q = query(docRef, orderBy("createdAt"));

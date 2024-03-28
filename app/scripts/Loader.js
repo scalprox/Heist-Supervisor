@@ -103,7 +103,7 @@ if (window.location.href.includes("https://theheist.game/")) {
   });
 } else if (
   window.location.href.startsWith("http://127.0.0.1:") ||
-  window.location.href.includes("https://heist-supervisor.firebaseapp.com/")
+  window.location.href.includes("https://heist-supervisor.web.app/")
 ) {
   window.addEventListener(
     "message",

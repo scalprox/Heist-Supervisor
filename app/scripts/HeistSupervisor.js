@@ -1,9 +1,13 @@
+const { documentId } = require("@firebase/firestore");
+
 const axios = require("axios").default;
 
+let observerMap = new Map();
 let baseline;
 let jailbreak;
 let locationsData = {};
 let cleanBaseline = {};
+let cosmeticActive = {};
 const locationsId = {
   "Havana Holdings": 14,
   "Bozo Bazar": 15,
@@ -16,15 +20,10 @@ const locationsId = {
 let manageLocationStyleObserver;
 
 let withdrawBtnPath;
-let xhrGangData;
 let xhrNotificationData;
 let userWallet;
 let getMoneyId;
 let getMoneyIdLoc;
-let newLiChimp;
-let newLiTang;
-let newLiStat;
-let CocoTabsClicked = false;
 let Amount;
 let isKiwiSelected = false;
 let isNanaSelected = false;
@@ -88,10 +87,9 @@ function waitForElem(searchFunction, abortPromise) {
       const timeout = setTimeout(() => {
         observer.disconnect();
         if (abortPromise && !abortPromise.cancelled) {
-          console.error("unable to retrieve : ", searchFunction);
-          reject(new Error("Unable to retrieve path from ", searchFunction));
+          reject(new Error("Unable to retrieve path from ", elem));
         }
-      }, 10000);
+      }, 5000);
     }
   });
 }
@@ -108,11 +106,27 @@ function waitForFirstElem(searchFunctions) {
 }
 
 function initFunction2() {
+  observerRoot();
   getLocationData();
   waitForElem(() => searchElement("Settings")).then((settingsButton) => {
+    socialButtonManager();
     startObservingWithdraw();
     manageClickedMenu();
   });
+
+  const supervisorTitle = document.createElement("h1");
+  supervisorTitle.textContent = "Supervised";
+  supervisorTitle.style.color = "white";
+  supervisorTitle.style.bottom = "15px";
+  supervisorTitle.style.left = "50%";
+  supervisorTitle.style.transform = "TranslateX(-50%)";
+  supervisorTitle.style.position = "fixed";
+  supervisorTitle.style.fontStyle = "normal";
+  supervisorTitle.style.fontWeight = "400";
+  supervisorTitle.style.textShadow = "2px 2px 4px rgba(20,20,20,.5)";
+  supervisorTitle.style.fontSize = "40px";
+  supervisorTitle.style.lineHeight = "40px";
+  document.querySelector("header").appendChild(supervisorTitle);
 
   waitForElem(() => searchElement("Heist Chat")).then((chatPath) => {
     const elementToObserve = chatPath.parentElement.children[0];
@@ -189,6 +203,185 @@ function sendInviteInGame() {
     );
   }
 }
+
+function observerRoot() {
+  const config = {
+    attributes: true,
+  };
+  const elementToObserver = document.getElementById("root");
+  const observer = new MutationObserver((mutationsList, observer) => {
+    for (const mutation of mutationsList) {
+      if (
+        mutation.type === "attributes" &&
+        mutation.attributeName === "aria-hidden"
+      ) {
+        const attribute = elementToObserver.getAttribute("aria-hidden");
+        if (attribute) {
+          waitForFirstElem([
+            () => searchElement("My Positions"),
+            () => searchElement("Cosmetic Shop"),
+            () => searchElement("GANGS"),
+            () => searchElement("Friendslist"),
+          ])
+            .then((result) => {
+              switch (result.textContent) {
+                case "My Positions":
+                  vaultFunction();
+                  break;
+                case "Cosmetic Shop":
+                  cosmeticShopFunction();
+                  break;
+                case "GANGS":
+                  gangsFunction();
+                  break;
+                case "Friendslist":
+                  friendsListFunction();
+                  break;
+              }
+            })
+            .catch((err) => {
+              console.error(err);
+            });
+        } else {
+        }
+      }
+    }
+  });
+  observer.observe(elementToObserver, config);
+}
+function vaultFunction() {}
+function cosmeticShopFunction() {
+  const title = searchElement("Cosmetic Shop");
+  const wardRobeButton = title.nextElementSibling.children[1];
+  wardRobeButton.addEventListener("click", () => {
+    waitForFirstElem([
+      () => searchElement("Wardrobe"),
+      () => searchElement("Go to shop"),
+    ])
+      .then((result) => {
+        if (result.textContent === "Go to shop ") {
+          searchUL();
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  });
+  searchUL();
+  function searchUL() {
+    waitForElem(() => searchElement("finished"))
+      .then((result) => {
+        const ul =
+          result.parentElement.parentElement.parentElement.parentElement;
+        addData(ul);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  }
+  function addData(ul) {
+    for (const li of ul.children) {
+      const index = Array.from(ul.children).indexOf(li);
+      const {
+        ticketsBought,
+        numberOfCosmetics,
+        price,
+        currencyId,
+        cosmeticMetadata,
+      } = cosmeticActive[index];
+      const chance =
+        ((numberOfCosmetics / ticketsBought) * 100).toFixed(2) + "%";
+      const parent = li.firstElementChild.firstElementChild;
+      const className = parent.children[1].className;
+      const newDiv = document.createElement("div");
+      newDiv.className = className;
+      newDiv.id = `oddsData${index}`;
+      newDiv.textContent = chance;
+      newDiv.style.marginTop = "4px";
+      newDiv.style.cursor = "pointer";
+      newDiv.style.borderRadius = "4px";
+      !document.getElementById(`oddsData${index}`) &&
+        parent.appendChild(newDiv);
+      document
+        .getElementById(`oddsData${index}`)
+        .addEventListener("click", () => {
+          oddsCalculator(
+            ticketsBought,
+            numberOfCosmetics,
+            Number(price),
+            currencyId,
+            cosmeticMetadata
+          );
+        });
+    }
+  }
+  function oddsCalculator(
+    ticketsBought,
+    numberOfCosmetics,
+    price,
+    currency,
+    cosmeticMetadata
+  ) {
+    const parent =
+      document.getElementById("root").nextElementSibling.nextElementSibling
+        .children[2];
+    const newDiv = document.createElement("div");
+    newDiv.id = "oddsCalculator";
+    newDiv.style.position = "fixed";
+    newDiv.style.top = "50%";
+    newDiv.style.left = "50%";
+    newDiv.style.transform = "translate(-50%, -50%)";
+    newDiv.style.zIndex = "9999";
+    newDiv.style.backgroundColor = "white";
+    newDiv.style.borderRadius = "8px";
+    newDiv.style.fontFamily = "SofiaSans,sans-serif";
+    newDiv.style.border = "2px solid rgb(0, 0, 0)";
+    newDiv.style.boxShadow = "rgba(0, 0, 0, 0.6) 0px 10px 10px";
+    newDiv.style.fontWeight = "bold";
+    newDiv.style.padding = "15px";
+    newDiv.style.color = "black";
+    newDiv.innerHTML = `
+    <h1 style="margin:3px; position:absolute; top:0; left:0">${cosmeticMetadata.attributeValue}</h1>
+    <button id="closeOddsCalc" style="margin:3px; border-radius:5px; background-color:#5e5e5e; color:white; font-size:medium; position:absolute; top:0; right:0">Close</button>
+    <p style="margin-top:20px; margin-bottom:4px; text-align:center" >Number of ticket to Bought :</p>
+    <input style="position:relative; left:25%" type="number" id="numberInput" placeholder="Type here" pattern="\d*" />
+    <p style="margin-top:10px; margin-bottom:4px; text-align:center">Your actual chance to win :</p>
+    <h1 id="oddsChance" style="font-size:x-large; text-align:center; margin-bottom:5px">0%</h1>
+    <h1 id="raffleCost" style="font-size:x-large; text-align:center">0 $${currency}</h1>
+    <p style="color:grey; text-align:center; margin-top:15px">( This display the chance to win at least 1 item )</p>
+
+    `;
+    const elem = document.getElementById("oddsCalculator");
+    !elem && parent.appendChild(newDiv);
+    const input = document.getElementById("numberInput");
+    input.focus();
+    input.addEventListener("input", () => {
+      const freshInput = document.getElementById("numberInput");
+      const raffleCost = document.getElementById("raffleCost");
+      const oddsChance = document.getElementById("oddsChance");
+      if (isNaN(parseFloat(freshInput.value)) || freshInput.value < 1) {
+        oddsChance.textContent = 0 + "%";
+        raffleCost.textContent = 0 + " $" + currency;
+      }
+      const value = freshInput.value;
+      const noWin = 1 - numberOfCosmetics / ticketsBought;
+      const calcPow = Math.pow(noWin, value);
+      const chanceToWinOne = ((1 - calcPow) * 100).toFixed(2);
+      oddsChance.textContent = chanceToWinOne + "%";
+      const cost = (price * value).toLocaleString("en-US");
+      raffleCost.textContent = `${cost} $${currency}`;
+    });
+    document.getElementById("closeOddsCalc").addEventListener(
+      "click",
+      () => {
+        document.getElementById("oddsCalculator").remove();
+      },
+      { once: true }
+    );
+  }
+}
+function gangsFunction() {}
+function friendsListFunction() {}
 
 function maxWithdraw() {
   // ↓↓ withdraw tab path ↓↓
@@ -647,10 +840,7 @@ function jailbreakFunction() {
             imgSRC.includes(item.rightParentNft.image)
         );
         if (activeJailBreakData) {
-          console.log(activeJailBreakData);
           const endDate = formatDate(activeJailBreakData);
-          console.log(endDate);
-          console.log(activeJailBreak);
           activeJailBreak.addEventListener("mouseenter", () => {
             createTooltip(activeJailBreak, endDate);
           });
@@ -742,6 +932,152 @@ function jailbreakFunction() {
   }
 }
 function landFunction() {}
+
+function socialButtonManager() {
+  let buttonClassName = {};
+  waitForElem(
+    () =>
+      document.getElementById("jailbreak-animation").previousElementSibling
+        .previousElementSibling.firstElementChild.children[2].lastElementChild,
+    {}
+  )
+    .then((result) => {
+      for (const button of result.children) {
+        if (button.className.includes("captivityButton")) {
+          buttonClassName = {
+            ...buttonClassName,
+            captivity: button.className,
+          };
+        } else if (button.className.includes("gangs")) {
+          buttonClassName = {
+            ...buttonClassName,
+            gangs: button.className,
+          };
+        } else if (button.className.includes("friendsList")) {
+          buttonClassName = {
+            ...buttonClassName,
+            friendsList: button.className,
+          };
+        } else if (button.className.includes("notification")) {
+          buttonClassName = {
+            ...buttonClassName,
+            notification: button.className,
+          };
+        }
+      }
+      for (const buttonClass of Object.entries(buttonClassName)) {
+        const button = document.getElementsByClassName(buttonClass[1]);
+        let notificationClicked = false;
+        button[0].addEventListener("click", () => {
+          switch (buttonClass[0]) {
+            case "captivity":
+              captivityFunction(button[0]);
+              break;
+            case "gangs":
+              gangsFunction(button[0]);
+              break;
+            case "friendsList":
+              friendsListFunction(button[0]);
+              break;
+            case "notification":
+              if (!notificationClicked) {
+                manageNotificationObserver(button[0]);
+                notificationFunction(button[0]);
+                notificationClicked = true;
+              }
+              break;
+          }
+        });
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+
+  function captivityFunction(button) {}
+  function gangsFunction(button) {}
+  function friendsListFunction(button) {}
+  function manageNotificationObserver(button) {
+    const config = {
+      attributes: true,
+      attributeFilter: ["class"],
+      subtree: true,
+    };
+    const observer = new MutationObserver((mutationsList) => {
+      for (let mutation of mutationsList) {
+        if (mutation.target.className.includes("active")) {
+          notificationFunction(button);
+        } else {
+          const observerID = observerMap.get("notificationScroller");
+          if (observerID) {
+            observerID.disconnect();
+            observerMap.delete("notificationScroller");
+          }
+        }
+      }
+    });
+    observer.observe(button.firstElementChild, config);
+  }
+  function notificationFunction(button) {
+    waitForElem(() => document.getElementById("notification-scroller"))
+      .then((result) => {
+        const ul = result.firstElementChild.firstElementChild;
+        for (const li of ul.children) {
+          const dataContainer =
+            li.firstElementChild.children[1].children[1].firstElementChild;
+          if (dataContainer.textContent === "") li.style.display = "none";
+        }
+        checkOverflow(result);
+        setNotificationObserver(ul);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+    function manageNotification(node) {
+      const dataContainer =
+        node.firstElementChild.children[1].children[1].firstElementChild;
+      if (dataContainer.textContent === "") {
+        node.style.display = "none";
+      }
+    }
+
+    function setNotificationObserver(parent) {
+      const config = { childList: true };
+      const observer = new MutationObserver((mutationsList, observerElem) => {
+        if (!observerMap.has("notificationScroller", observerElem)) {
+          observerMap.set("notificationScroller", observerElem);
+        }
+        for (const mutation of mutationsList) {
+          if (mutation.type === "childList") {
+            mutation.addedNodes.forEach((node) => {
+              if (
+                node.nodeType === Node.ELEMENT_NODE &&
+                node.className.includes("notification")
+              ) {
+                manageNotification(node);
+              }
+            });
+          }
+        }
+      });
+      observer.observe(parent, config);
+    }
+    function checkOverflow(element) {
+      const overflow = window.getComputedStyle(element).overflowY;
+      let updateNotification = setInterval(() => {
+        if (
+          overflow !== "visible" &&
+          overflow !== "hidden" &&
+          element.scrollHeight > element.clientHeight
+        ) {
+          clearInterval(updateNotification);
+        } else {
+          element.dispatchEvent(new Event("scroll"));
+        }
+      }, 300);
+    }
+  }
+}
 
 //s3 elem
 function startObservingWithdraw() {
@@ -880,6 +1216,14 @@ async function getLocationData() {
     .get("https://api.theheist.game/location", option)
     .then((result) => {
       locationsData = result.data;
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+  axios
+    .get("https://api.theheist.game/raffle/cosmetic-active", option)
+    .then((result) => {
+      cosmeticActive = result.data;
     })
     .catch((err) => {
       console.error(err);
